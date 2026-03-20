@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ansible Ops — Save the Datacenter</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0a0c10;
+  --bg2:      #0f1218;
+  --bg3:      #151a22;
+  --panel:    #12161e;
+  --border:   #1e2636;
+  --amber:    #f59e0b;
+  --amber2:   #fbbf24;
+  --amber3:   #78450a;
+  --orange:   #ea580c;
+  --red:      #dc2626;
+  --green:    #16a34a;
+  --green2:   #22c55e;
+  --blue:     #2563eb;
+  --blue2:    #60a5fa;
+  --muted:    #4a5568;
+  --text:     #e2e8f0;
+  --text2:    #94a3b8;
+  --mono:     'JetBrains Mono', monospace;
+  --orb:      'Orbitron', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden;}
+
+/* Scanlines overlay */
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+/* ── SCREENS ─────────────────────────────────────── */
+.screen{display:none;width:100%;min-height:100vh;}
+.screen.active{display:flex;}
+
+/* ── START SCREEN ────────────────────────────────── */
+#screen-start{flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px 20px;}
+.logo{text-align:center;}
+.logo h1{font-family:var(--orb);font-size:clamp(28px,5vw,52px);color:var(--amber);letter-spacing:4px;text-shadow:0 0 40px rgba(245,158,11,0.4);}
+.logo p{color:var(--amber2);font-size:12px;letter-spacing:6px;margin-top:6px;opacity:0.7;}
+.logo .sub{color:var(--text2);font-size:11px;letter-spacing:2px;margin-top:4px;}
+
+.alert-box{
+  background:rgba(234,88,12,0.1);border:1px solid var(--orange);
+  padding:16px 24px;max-width:580px;width:100%;
+  font-size:12px;line-height:2;color:var(--text);
+}
+.alert-box .head{color:var(--orange);font-weight:700;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.blink{animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+.start-lb{background:var(--panel);border:1px solid var(--border);padding:16px;max-width:480px;width:100%;}
+.start-lb h3{color:var(--amber);font-size:11px;letter-spacing:3px;margin-bottom:12px;text-align:center;}
+.lb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{color:var(--amber);width:24px;}
+.lb-name{color:var(--text);flex:1;padding:0 8px;}
+.lb-score{color:var(--amber2);}
+.lb-empty{color:var(--muted);font-size:11px;text-align:center;padding:8px 0;}
+
+.btn-start{
+  font-family:var(--orb);font-size:14px;letter-spacing:3px;
+  background:var(--amber);color:#000;border:none;
+  padding:16px 48px;cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-start:hover{background:var(--amber2);box-shadow:0 0 30px rgba(245,158,11,0.4);}
+
+/* ── GAME SCREEN ──────────────────────────────────── */
+#screen-game{
+  flex-direction:row;
+  padding:0;
+  min-height:100vh;
+  gap:0;
+}
+
+/* Left: server rack */
+.rack-panel{
+  width:200px;flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:16px 12px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.rack-title{font-family:var(--orb);font-size:9px;color:var(--muted);letter-spacing:3px;margin-bottom:8px;text-align:center;}
+.server-unit{
+  background:var(--bg3);border:1px solid var(--border);
+  padding:8px 10px;position:relative;
+  transition:all 0.3s;
+}
+.server-unit.ok{border-color:#1e3a2a;}
+.server-unit.warning{border-color:var(--amber3);animation:pulse-warn 2s infinite;}
+.server-unit.critical{border-color:var(--red);animation:pulse-crit 0.8s infinite;}
+.server-unit.fixed{border-color:var(--green);animation:none;}
+@keyframes pulse-warn{0%,100%{box-shadow:none;}50%{box-shadow:0 0 8px rgba(234,88,12,0.3);}}
+@keyframes pulse-crit{0%,100%{box-shadow:none;}50%{box-shadow:0 0 12px rgba(220,38,38,0.5);}}
+.server-name{font-size:9px;color:var(--text2);margin-bottom:4px;}
+.server-led{display:flex;gap:4px;align-items:center;}
+.led{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.server-unit.warning .led.power{background:var(--amber);}
+.server-unit.critical .led.power{background:var(--red);animation:blink 0.5s infinite;}
+.server-unit.fixed .led.power{background:var(--green2);}
+.led.disk{background:#1e3a8a;}
+.server-unit.critical .led.disk,.server-unit.warning .led.disk{background:#374151;}
+.server-label{font-size:8px;color:var(--muted);margin-left:auto;}
+.server-unit.ok .server-label{color:var(--green);}
+.server-unit.warning .server-label{color:var(--amber);}
+.server-unit.critical .server-label{color:var(--red);}
+.server-unit.fixed .server-label{color:var(--green2);}
+
+.rack-status{
+  margin-top:auto;background:var(--bg3);border:1px solid var(--border);
+  padding:10px;font-size:10px;
+}
+.rack-status .rs-label{color:var(--muted);margin-bottom:4px;}
+.rack-status .rs-val{color:var(--amber2);font-family:var(--orb);font-size:16px;}
+
+/* Main game area */
+.game-main{
+  flex:1;display:flex;flex-direction:column;
+  padding:20px 24px;overflow-y:auto;
+}
+
+/* Top HUD */
+.hud{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:20px;padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.hud-item{display:flex;flex-direction:column;gap:2px;}
+.hud-label{font-size:9px;color:var(--muted);letter-spacing:2px;}
+.hud-val{font-family:var(--orb);font-size:18px;color:var(--amber);}
+.hud-val.green{color:var(--green2);}
+.hud-val.red{color:var(--red);}
+.hud-sep{width:1px;height:36px;background:var(--border);}
+.hud-title{font-family:var(--orb);font-size:11px;color:var(--amber);letter-spacing:3px;margin-left:auto;}
+
+/* Timer bar */
+
+/* Pager / alert */
+.pager{
+  background:var(--panel);border:1px solid var(--border);
+  border-left:3px solid var(--orange);
+  padding:16px 20px;margin-bottom:20px;
+}
+.pager-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.pager-from{font-size:10px;color:var(--orange);letter-spacing:1px;}
+.pager-badge{font-size:9px;background:rgba(220,38,38,0.15);color:var(--red);border:1px solid var(--red);padding:2px 8px;letter-spacing:2px;}
+.pager-host{font-family:var(--orb);font-size:13px;color:var(--amber);margin-bottom:8px;}
+.pager-msg{font-size:12px;color:var(--text);line-height:1.8;}
+.pager-tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.tag{font-size:9px;background:rgba(37,99,235,0.1);color:var(--blue2);border:1px solid rgba(37,99,235,0.3);padding:2px 8px;letter-spacing:1px;}
+
+/* Concept hint */
+.concept-hint{
+  background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);
+  padding:10px 14px;margin-bottom:20px;
+  font-size:11px;color:var(--text2);line-height:1.8;
+}
+.concept-hint strong{color:var(--amber2);}
+
+/* Answer cards */
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.answer-card{
+  background:var(--panel);border:1px solid var(--border);
+  padding:14px 16px;cursor:pointer;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.answer-card:hover{border-color:var(--amber);background:rgba(245,158,11,0.05);}
+.answer-card.correct{border-color:var(--green2);background:rgba(22,163,74,0.1);animation:flash-green 0.4s;}
+.answer-card.wrong{border-color:var(--red);background:rgba(220,38,38,0.1);animation:flash-red 0.3s;}
+.answer-card.disabled{pointer-events:none;opacity:0.5;}
+.answer-card.reveal-correct{border-color:var(--green2);background:rgba(22,163,74,0.08);opacity:1;}
+@keyframes flash-green{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.8);}100%{box-shadow:0 0 20px 8px rgba(34,197,94,0);}}
+@keyframes flash-red{0%{box-shadow:0 0 0 0 rgba(220,38,38,0.8);}100%{box-shadow:0 0 20px 8px rgba(220,38,38,0);}}
+.answer-letter{font-family:var(--orb);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:2px;}
+.answer-card.correct .answer-letter{color:var(--green2);}
+.answer-card.wrong .answer-letter{color:var(--red);}
+.answer-cmd{font-size:11px;color:var(--blue2);margin-bottom:6px;word-break:break-all;}
+.answer-desc{font-size:10px;color:var(--text2);line-height:1.6;}
+
+/* Feedback / PLAY RECAP */
+.play-recap{
+  display:none;
+  background:var(--bg3);border:1px solid var(--border);
+  padding:16px 20px;margin-bottom:20px;
+  font-size:11px;line-height:2;
+  font-family:var(--mono);
+}
+.play-recap.visible{display:block;}
+.recap-line{display:flex;gap:12px;}
+.recap-ok{color:var(--green2);}
+.recap-fail{color:var(--red);}
+.recap-skip{color:var(--muted);}
+.recap-summary{margin-top:8px;font-size:13px;}
+.recap-summary.ok{color:var(--green2);}
+.recap-summary.fail{color:var(--red);}
+
+.btn-next{
+  font-family:var(--orb);font-size:11px;letter-spacing:2px;
+  background:transparent;color:var(--amber);
+  border:1px solid var(--amber);padding:10px 28px;
+  cursor:pointer;transition:all 0.2s;display:none;
+}
+.btn-next:hover{background:rgba(245,158,11,0.1);}
+.btn-next.visible{display:inline-block;}
+
+/* ── RESULT SCREEN ────────────────────────────────── */
+#screen-result{flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 20px;}
+.result-header{text-align:center;}
+.result-header h2{font-family:var(--orb);font-size:clamp(22px,4vw,36px);color:var(--amber);letter-spacing:3px;}
+.result-header p{color:var(--text2);font-size:11px;letter-spacing:2px;margin-top:6px;}
+.result-score{font-family:var(--orb);font-size:clamp(48px,10vw,80px);color:var(--amber);text-shadow:0 0 40px rgba(245,158,11,0.4);}
+.result-stats{display:flex;gap:32px;justify-content:center;}
+.result-stat{text-align:center;}
+.result-stat-val{font-family:var(--orb);font-size:20px;color:var(--text);}
+.result-stat-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.save-form{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:360px;}
+.save-form label{font-size:10px;color:var(--muted);letter-spacing:2px;align-self:flex-start;}
+.save-form input{
+  width:100%;font-family:var(--mono);font-size:13px;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:10px 14px;outline:none;
+}
+.save-form input:focus{border-color:var(--amber);}
+.save-form button{
+  font-family:var(--orb);font-size:11px;letter-spacing:2px;
+  background:var(--amber);color:#000;border:none;
+  padding:10px 32px;cursor:pointer;width:100%;
+}
+.result-lb{background:var(--panel);border:1px solid var(--border);padding:16px;max-width:480px;width:100%;}
+.result-lb h3{color:var(--amber);font-size:10px;letter-spacing:3px;margin-bottom:12px;}
+.save-msg{font-size:10px;color:var(--muted);min-height:16px;}
+.btn-again{
+  font-family:var(--orb);font-size:11px;letter-spacing:2px;
+  background:transparent;color:var(--amber);
+  border:1px solid var(--amber);padding:10px 32px;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- ════ START SCREEN ════ -->
+<div id="screen-start" class="screen active">
+  <div class="logo">
+    <h1>ANSIBLE OPS</h1>
+    <p>SAVE THE DATACENTER</p>
+    <div class="sub">NOC SIMULATOR — ANSIBLE EDITION</div>
+  </div>
+
+  <div class="alert-box">
+    <div class="head"><span class="blink">▶</span> INCOMING ALERT — PRODUCTION DOWN</div>
+    Your company's servers are failing. You're the new DevOps hire.<br>
+    Fix everything with Ansible before the CEO notices.<br>
+    Read the alert → pick the right playbook → watch the PLAY RECAP.
+  </div>
+
+  <div class="start-lb">
+    <h3>🏆 TOP ENGINEERS</h3>
+    <div id="lb-start-inner"><div class="lb-empty">Loading...</div></div>
+  </div>
+
+  <button class="btn-start" onclick="startGame()">▶ DEPLOY ENGINEER</button>
+</div>
+
+<!-- ════ GAME SCREEN ════ -->
+<div id="screen-game" class="screen">
+
+  <!-- Server rack -->
+  <div class="rack-panel">
+    <div class="rack-title">SERVER RACK</div>
+    <div id="rack-servers"></div>
+    <div class="rack-status">
+      <div class="rs-label">UPTIME</div>
+      <div class="rs-val" id="rack-uptime">100%</div>
+    </div>
+  </div>
+
+  <!-- Main area -->
+  <div class="game-main">
+    <div class="hud">
+      <div class="hud-item">
+        <div class="hud-label">SCORE</div>
+        <div class="hud-val" id="hud-score">0</div>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-item">
+        <div class="hud-label">LEVEL</div>
+        <div class="hud-val" id="hud-level">1/10</div>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-item">
+        <div class="hud-label">STREAK</div>
+        <div class="hud-val green" id="hud-streak">0</div>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-item">
+        <div class="hud-label">LIVES</div>
+        <div class="hud-val red" id="hud-lives">❤❤❤</div>
+      </div>
+      <div class="hud-title">ANSIBLE OPS</div>
+    </div>
+
+    </div>
+
+    <div class="pager" id="pager">
+      <div class="pager-header">
+        <div class="pager-from">PAGERDUTY ALERT</div>
+        <div class="pager-badge blink">CRITICAL</div>
+      </div>
+      <div class="pager-host" id="pager-host">web-01.prod</div>
+      <div class="pager-msg" id="pager-msg">Loading scenario...</div>
+      <div class="pager-tags" id="pager-tags"></div>
+    </div>
+
+    <div class="concept-hint" id="concept-hint"></div>
+
+    <div class="answers" id="answers"></div>
+
+    <div class="play-recap" id="play-recap"></div>
+
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">NEXT MISSION ▶</button>
+  </div>
+</div>
+
+<!-- ════ RESULT SCREEN ════ -->
+<div id="screen-result" class="screen">
+  <div class="result-header">
+    <h2 id="result-title">MISSION COMPLETE</h2>
+    <p id="result-subtitle">DATACENTER STATUS: RESTORED</p>
+  </div>
+  <div class="result-score" id="result-score">0</div>
+  <div class="result-stats">
+    <div class="result-stat"><div class="result-stat-val" id="res-correct">0</div><div class="result-stat-label">CORRECT</div></div>
+    <div class="result-stat"><div class="result-stat-val" id="res-streak">0</div><div class="result-stat-label">BEST STREAK</div></div>
+  </div>
+
+  <div class="save-form">
+    <label>ENGINEER NAME</label>
+    <input type="text" id="player-name" maxlength="16" placeholder="YOUR_NAME"/>
+    <button onclick="saveScore()">SUBMIT SCORE</button>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+
+  <div class="result-lb">
+    <h3>🏆 LEADERBOARD</h3>
+    <div id="lb-result-inner"><div class="lb-empty">Loading...</div></div>
+  </div>
+
+  <button class="btn-again" onclick="location.reload()">↺ NEW MISSION</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// SCENARIOS — 10 questions, generic Ansible concepts
+// ══════════════════════════════════════════════════
+const SCENARIOS = [
+  {
+    host: "app-server-01.prod",
+    severity: "CRITICAL",
+    msg: "You have a fresh Ubuntu server with nothing on it. You need to run your full Ansible automation to configure it from scratch.",
+    tags: ["playbook", "basics", "getting-started"],
+    hint: "<strong>ansible-playbook</strong> is the main command to execute a playbook. Point it at your YAML file and Ansible connects to the hosts in your inventory and runs all the tasks.",
+    answers: [
+      { cmd: "ansible-playbook site.yml", desc: "Execute the playbook against all hosts defined in inventory", correct: true },
+      { cmd: "ansible all -m ping", desc: "Just checks connectivity — installs and configures nothing", correct: false },
+      { cmd: "ansible-playbook site.yml --syntax-check", desc: "Only validates YAML syntax, does not run any tasks", correct: false },
+      { cmd: "ansible-vault encrypt site.yml", desc: "Encrypts the playbook file — does not execute it", correct: false },
+    ],
+    recap_ok: ["TASK [common : Update apt cache] *** changed", "TASK [common : Install base packages] *** changed", "TASK [common : Create deploy user] *** changed", "PLAY RECAP *** app-server-01 : ok=14 changed=10 failed=0"],
+    recap_fail: ["fatal: [app-server-01]: FAILED! => {"msg": "no playbook was provided"}", "PLAY RECAP *** app-server-01 : ok=0 changed=0 failed=1"],
+  },
+  {
+    host: "db-primary.prod",
+    severity: "HIGH",
+    msg: "You want to see exactly what your playbook would change on <b>db-primary.prod</b> before touching production. Show the changes without applying them.",
+    tags: ["check-mode", "dry-run", "diff", "safety"],
+    hint: "<strong>--check</strong> simulates the run without making changes. Combined with <strong>--diff</strong> it shows exactly what file content would change — like a git diff for your config files.",
+    answers: [
+      { cmd: "ansible-playbook site.yml --check --diff", desc: "Simulate the run and show file diffs — zero changes applied", correct: true },
+      { cmd: "ansible-playbook site.yml", desc: "Runs the full playbook and applies all changes immediately", correct: false },
+      { cmd: "ansible-playbook site.yml --list-tasks", desc: "Lists task names but does not show what would change in files", correct: false },
+      { cmd: "ansible-playbook site.yml --step", desc: "Prompts for confirmation before each task — still applies changes", correct: false },
+    ],
+    recap_ok: ["TASK [app : Deploy config.j2] *** changed (check mode)", "--- /etc/app/config.conf", "+++ /etc/app/config.conf", "-db_host=old-db", "+db_host=db-primary.prod", "PLAY RECAP *** db-primary : ok=8 changed=3 failed=0 (check mode — no changes applied)"],
+    recap_fail: ["TASK [app : Deploy config.j2] *** changed", "TASK [app : Restart service] *** changed", "WARNING: Changes were applied to production! Check mode was not used."],
+  },
+  {
+    host: "web-03.prod",
+    severity: "HIGH",
+    msg: "Only <b>web-03.prod</b> has a broken nginx config. The other 5 web servers are fine. You need to re-run the playbook against this one host only.",
+    tags: ["limit", "targeted", "single-host"],
+    hint: "<strong>--limit</strong> restricts playbook execution to a subset of hosts from your inventory. Accepts hostnames, group names, patterns, or comma-separated lists.",
+    answers: [
+      { cmd: "ansible-playbook site.yml --limit web-03.prod", desc: "Run the playbook against this one host only", correct: true },
+      { cmd: "ansible-playbook site.yml", desc: "Runs against all hosts in inventory — unnecessary and risky", correct: false },
+      { cmd: "ansible web-03.prod -m service -a 'name=nginx state=restarted'", desc: "Restarts nginx but does not fix the broken config file", correct: false },
+      { cmd: "ansible-playbook site.yml --tags nginx", desc: "Runs nginx-tagged tasks on ALL web servers, not just web-03", correct: false },
+    ],
+    recap_ok: ["PLAY [Configure webservers] ***", "TASK [nginx : Deploy nginx.conf] *** changed", "TASK [nginx : Validate config] *** ok", "RUNNING HANDLER [restart nginx] *** changed", "PLAY RECAP *** web-03.prod : ok=5 changed=2 failed=0"],
+    recap_fail: ["PLAY RECAP *** web-01 : ok=5  web-02 : ok=5  web-03 : ok=5  web-04 : ok=5  web-05 : ok=5  web-06 : ok=5", "WARNING: All 6 servers were restarted unnecessarily"],
+  },
+  {
+    host: "all-webservers",
+    severity: "MEDIUM",
+    msg: "You need to quickly check if all your web servers are reachable and responding to Ansible. No playbook needed — just a fast connectivity test.",
+    tags: ["ad-hoc", "ping", "inventory", "module"],
+    hint: "<strong>Ad-hoc commands</strong> let you run a single module without writing a playbook. The <code>ping</code> module tests that Ansible can connect and Python is available on the target.",
+    answers: [
+      { cmd: "ansible webservers -m ping", desc: "Test Ansible connectivity to all hosts in the webservers group", correct: true },
+      { cmd: "ping 192.168.1.10", desc: "Regular ICMP ping — does not test Ansible connectivity or Python", correct: false },
+      { cmd: "ansible-playbook ping.yml", desc: "Would need a playbook file to exist — overkill for a quick check", correct: false },
+      { cmd: "ansible webservers -m shell -a 'echo ok'", desc: "Works but shell module is heavier than ping for a simple check", correct: false },
+    ],
+    recap_ok: ["web-01 | SUCCESS => {"changed": false, "ping": "pong"}", "web-02 | SUCCESS => {"changed": false, "ping": "pong"}", "web-03 | SUCCESS => {"changed": false, "ping": "pong"}"],
+    recap_fail: ["web-01 | UNREACHABLE! => {"msg": "Failed to connect to the host via ssh"}", "web-02 | UNREACHABLE! => {"msg": "Connection timed out"}"],
+  },
+  {
+    host: "all-servers",
+    severity: "HIGH",
+    msg: "Your playbook has a bug and something is always triggering a service restart even when nothing changed. You need the restart to happen <b>only when the config file is actually modified</b>.",
+    tags: ["handlers", "idempotency", "notify"],
+    hint: "<strong>Handlers</strong> are tasks that only run when explicitly notified by another task that reported 'changed'. They run once at the end of the play — perfect for service restarts.",
+    answers: [
+      { cmd: "notify: Restart app  # on the template task, with matching handler", desc: "Handler fires only when the template task actually changes the file", correct: true },
+      { cmd: "- name: Restart app
+  service: name=myapp state=restarted", desc: "A regular task — restarts the service on every single run", correct: false },
+      { cmd: "when: config_file.changed", desc: "Not valid Ansible syntax — 'changed' is not tracked this way", correct: false },
+      { cmd: "meta: flush_handlers", desc: "Forces pending handlers to run now — does not prevent unnecessary restarts", correct: false },
+    ],
+    recap_ok: ["TASK [app : Deploy app.conf.j2] *** changed", "RUNNING HANDLER [Restart app] *** changed", "PLAY RECAP *** ok=6 changed=2 failed=0", "# Second run — config unchanged:", "TASK [app : Deploy app.conf.j2] *** ok  (no handler triggered)"],
+    recap_fail: ["TASK [Restart app] *** changed", "TASK [Restart app] *** changed", "TASK [Restart app] *** changed  ← runs every time regardless of changes"],
+  },
+  {
+    host: "app-cluster",
+    severity: "CRITICAL",
+    msg: "A colleague pushed a playbook to the shared repo. Before anyone runs it on production, you need to validate it has no syntax errors — without connecting to any host.",
+    tags: ["syntax-check", "validation", "pre-flight"],
+    hint: "<strong>--syntax-check</strong> parses the entire playbook including all imported roles and tasks, and reports YAML/Jinja2 errors. It never connects to any host.",
+    answers: [
+      { cmd: "ansible-playbook site.yml --syntax-check", desc: "Parse and validate syntax — zero host connections made", correct: true },
+      { cmd: "ansible-playbook site.yml --check", desc: "Dry run — still connects to hosts and runs task logic", correct: false },
+      { cmd: "cat site.yml | python3 -c 'import yaml,sys; yaml.safe_load(sys.stdin)'", desc: "Only checks basic YAML, misses Ansible-specific syntax and Jinja2", correct: false },
+      { cmd: "ansible-lint site.yml", desc: "Best-practice linter — useful but much heavier than a syntax check", correct: false },
+    ],
+    recap_ok: ["playbook: site.yml", "  play #1 (all): Initial setup       TAGS: []", "  play #2 (webservers): Deploy app  TAGS: []", "  play #3 (databases): Configure DB TAGS: []", "✓ Syntax check passed — no errors found"],
+    recap_fail: ["ERROR! Syntax Error while loading YAML.", "  mapping values are not allowed here", "  in "roles/app/tasks/main.yml", line 23, column 9"],
+  },
+  {
+    host: "vault-server.prod",
+    severity: "HIGH",
+    msg: "Your team's playbook stores a database password in plaintext in <b>group_vars/all/secrets.yml</b>. You need to encrypt this file before committing it to the Git repository.",
+    tags: ["vault", "encrypt", "secrets", "security"],
+    hint: "<strong>ansible-vault encrypt</strong> encrypts an existing file with AES-256. Ansible automatically decrypts it at runtime when you pass <code>--ask-vault-pass</code> or use a vault password file.",
+    answers: [
+      { cmd: "ansible-vault encrypt group_vars/all/secrets.yml", desc: "Encrypt the file in place with AES-256 — safe to commit to Git", correct: true },
+      { cmd: "ansible-vault view group_vars/all/secrets.yml", desc: "View an already-encrypted vault file — file must already be encrypted", correct: false },
+      { cmd: "ansible-vault create group_vars/all/secrets.yml", desc: "Create a new encrypted file — fails if the file already exists", correct: false },
+      { cmd: "ansible-vault decrypt group_vars/all/secrets.yml", desc: "Decrypts back to plaintext — the opposite of what we need!", correct: false },
+    ],
+    recap_ok: ["New Vault password: ****", "Confirm New Vault password: ****", "Encryption successful", "$ANSIBLE_VAULT;1.1;AES256", "39333161323934623061663465306265393734..."],
+    recap_fail: ["WARNING: group_vars/all/secrets.yml committed to Git in PLAINTEXT", "db_password: supersecret123  ← visible in git log!"],
+  },
+  {
+    host: "db-cluster",
+    severity: "CRITICAL",
+    msg: "You have a 3-node database cluster. When Ansible runs in parallel it breaks replication — all 3 nodes restart simultaneously. Nodes must be updated <b>one at a time</b>.",
+    tags: ["serial", "rolling-update", "cluster"],
+    hint: "<strong>serial: 1</strong> in the play definition tells Ansible to complete all tasks on one host before moving to the next. You can also use <code>serial: '33%'</code> for percentage-based rolling updates.",
+    answers: [
+      { cmd: "serial: 1  # in the play definition", desc: "Process hosts sequentially — one fully completes before next starts", correct: true },
+      { cmd: "ansible-playbook site.yml --forks 1", desc: "Limits parallelism globally but applies to all plays, not just this one", correct: false },
+      { cmd: "strategy: free  # in play definition", desc: "Each host runs independently as fast as possible — makes it worse", correct: false },
+      { cmd: "ansible-playbook site.yml --limit db-node-01", desc: "Only configures one node — the others are never updated", correct: false },
+    ],
+    recap_ok: ["PLAY [Update database cluster] serial=1 ***", "TASK [db : Stop replica] *** db-node-01 changed", "TASK [db : Apply migration] *** db-node-01 changed", "TASK [db : Start replica] *** db-node-01 changed", "TASK [db : Stop replica] *** db-node-02 changed  ← only after node-01 is done"],
+    recap_fail: ["TASK [db : Stop replica] *** db-node-01, db-node-02, db-node-03 changed (all parallel)", "TASK [db : Apply migration] *** FAILED — no primary available, cluster lost quorum!"],
+  },
+  {
+    host: "web-fleet",
+    severity: "MEDIUM",
+    msg: "You only want to run the tasks related to <b>deployment</b> in your playbook (tagged <code>deploy</code>), skipping the initial setup tasks. How do you run only those tasks?",
+    tags: ["tags", "selective", "deploy"],
+    hint: "<strong>--tags</strong> runs only tasks matching the given tag(s). <strong>--skip-tags</strong> does the opposite. Tasks without any tag always run unless you use <code>--tags</code> which skips untagged tasks.",
+    answers: [
+      { cmd: "ansible-playbook site.yml --tags deploy", desc: "Run only tasks tagged 'deploy' — all others are skipped", correct: true },
+      { cmd: "ansible-playbook deploy.yml", desc: "Runs a separate playbook file — you'd need to maintain two files", correct: false },
+      { cmd: "ansible-playbook site.yml --skip-tags setup", desc: "Skips 'setup' tasks but still runs everything else — not selective enough", correct: false },
+      { cmd: "ansible-playbook site.yml --start-at-task 'Deploy app'", desc: "Starts from a specific task name — fragile if task names change", correct: false },
+    ],
+    recap_ok: ["TASK [setup : Install packages] *** skipping (tagged: setup)", "TASK [setup : Create users] *** skipping (tagged: setup)", "TASK [app : Pull latest image] *** changed (tagged: deploy)", "TASK [app : Restart service] *** changed (tagged: deploy)", "PLAY RECAP *** web-fleet : ok=4 changed=2 failed=0"],
+    recap_fail: ["TASK [setup : Install packages] *** changed  ← setup ran again unnecessarily", "TASK [setup : Create users] *** ok", "TASK [app : Pull latest image] *** changed", "WARNING: Full playbook ran — setup tasks wasted 3 minutes"],
+  },
+  {
+    host: "app-server-05.prod",
+    severity: "MEDIUM",
+    msg: "Before running a playbook on a new server, you want to see the full list of tasks that will execute — in order — without connecting to the host or making any changes.",
+    tags: ["list-tasks", "review", "planning"],
+    hint: "<strong>--list-tasks</strong> prints every task that would run (with their tags) in the correct order, without connecting to any host. Great for reviewing what a role or playbook actually does.",
+    answers: [
+      { cmd: "ansible-playbook site.yml --list-tasks", desc: "Print all tasks in order — no host connections, no changes", correct: true },
+      { cmd: "ansible-playbook site.yml --check", desc: "Dry run — still connects to hosts and evaluates conditions", correct: false },
+      { cmd: "ansible-playbook site.yml --list-hosts", desc: "Shows which hosts would be targeted — not the task list", correct: false },
+      { cmd: "cat roles/app/tasks/main.yml", desc: "Shows raw YAML of one role file — not the full resolved task list", correct: false },
+    ],
+    recap_ok: ["playbook: site.yml", "  play #1 (all): Common setup", "    tasks:", "      common : Update package cache   TAGS: [setup]", "      common : Install base packages  TAGS: [setup]", "      common : Create app user        TAGS: [setup]", "  play #2 (webservers): Deploy application", "    tasks:", "      app : Pull container image      TAGS: [deploy]", "      app : Write app config          TAGS: [deploy, config]", "      app : Start app service         TAGS: [deploy]"],
+    recap_fail: ["SSH: Connecting to app-server-05.prod...", "TASK [common : Update package cache] *** changed  ← host was actually modified!", "WARNING: --list-tasks was not used, tasks were executed"],
+  },
+];
+
+// ══════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════
+let state = {
+  current: 0,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  lives: 3,
+  correct: 0,
+  answered: false,
+  servers: [],
+};
+
+const SERVERS = [
+  'web-01','web-02','db-01','db-02',
+  'k3s-m1','k3s-m2','k3s-w1','k3s-w2',
+  'haproxy','nfs-srv'
+];
+
+function initServers() {
+  state.servers = SERVERS.map(n => ({name: n, status: 'ok'}));
+  renderRack();
+}
+
+function renderRack() {
+  const el = document.getElementById('rack-servers');
+  el.innerHTML = state.servers.map(s => `
+    <div class="server-unit ${s.status}" id="srv-${s.name}">
+      <div class="server-name">${s.name}</div>
+      <div class="server-led">
+        <div class="led power"></div>
+        <div class="led disk"></div>
+        <div class="led disk"></div>
+        <div class="server-label">${s.status.toUpperCase()}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const ok = state.servers.filter(s => s.status === 'ok' || s.status === 'fixed').length;
+  document.getElementById('rack-uptime').textContent = Math.round((ok / state.servers.length) * 100) + '%';
+}
+
+function damageServer() {
+  const targets = state.servers.filter(s => s.status === 'ok');
+  if (targets.length === 0) return;
+  const s = targets[Math.floor(Math.random() * targets.length)];
+  s.status = 'critical';
+  renderRack();
+}
+
+function warnServer() {
+  const targets = state.servers.filter(s => s.status === 'ok');
+  if (targets.length === 0) return;
+  const s = targets[Math.floor(Math.random() * targets.length)];
+  s.status = 'warning';
+  renderRack();
+}
+
+function fixServer() {
+  const targets = state.servers.filter(s => s.status === 'critical' || s.status === 'warning');
+  if (targets.length === 0) return;
+  const s = targets[0];
+  s.status = 'fixed';
+  renderRack();
+}
+
+// ══════════════════════════════════════════════════
+// GAME FLOW
+// ══════════════════════════════════════════════════
+function startGame() {
+  state = { current:0, score:0, streak:0, bestStreak:0, lives:3, correct:0, answered:false };
+  initServers();
+  showScreen('screen-game');
+  loadQuestion();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function loadQuestion() {
+  const q = SCENARIOS[state.current];
+  state.answered = false;
+  // HUD
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-level').textContent = (state.current + 1) + '/10';
+  document.getElementById('hud-streak').textContent = state.streak;
+  document.getElementById('hud-lives').textContent = '❤'.repeat(state.lives) + '♡'.repeat(3 - state.lives);
+
+  // Pager alert
+  document.getElementById('pager-host').textContent = q.host;
+  document.getElementById('pager-msg').innerHTML = q.msg;
+  document.getElementById('pager-tags').innerHTML = q.tags.map(t => `<span class="tag">${t}</span>`).join('');
+  document.getElementById('concept-hint').innerHTML = '💡 HINT: ' + q.hint;
+
+  // Shuffle answers
+  const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
+  const letters = ['A','B','C','D'];
+  document.getElementById('answers').innerHTML = shuffled.map((a, i) => `
+    <div class="answer-card" onclick="selectAnswer(this, ${a.correct})">
+      <div class="answer-letter">OPTION ${letters[i]}</div>
+      <div class="answer-cmd">${a.cmd.replace(/\n/g,'<br>')}</div>
+      <div class="answer-desc">${a.desc}</div>
+    </div>
+  `).join('');
+
+  // Hide recap + next
+  document.getElementById('play-recap').classList.remove('visible');
+  document.getElementById('btn-next').classList.remove('visible');
+
+  // Damage a server for effect
+  if (state.current % 2 === 0) damageServer(); else warnServer();
+
+}
+
+
+
+function selectAnswer(el, correct) {
+  if (state.answered) return;
+  state.answered = true;
+    // Disable all cards
+  document.querySelectorAll('.answer-card').forEach(c => c.classList.add('disabled'));
+
+  if (correct) {
+    el.classList.add('correct');
+    const streakBonus = state.streak * 50;
+    const points = 100 + streakBonus;
+    state.score += points;
+    state.correct++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    fixServer();
+  } else {
+    el.classList.add('wrong');
+    state.streak = 0;
+    state.lives--;
+    damageServer();
+    // Reveal correct
+    document.querySelectorAll('.answer-card').forEach(c => {
+      if (c.onclick.toString().includes('true')) c.classList.add('reveal-correct');
+    });
+  }
+
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-streak').textContent = state.streak;
+  document.getElementById('hud-lives').textContent = '❤'.repeat(Math.max(0,state.lives)) + '♡'.repeat(Math.max(0, 3 - state.lives));
+
+  showRecap(correct);
+  if (state.lives <= 0) { setTimeout(endGame, 2500); return; }
+  document.getElementById('btn-next').classList.add('visible');
+}
+
+function showRecap(correct) {
+  const q = SCENARIOS[state.current];
+  const lines = correct ? q.recap_ok : q.recap_fail;
+  const cls = correct ? 'recap-ok' : 'recap-fail';
+  const summary = correct
+    ? `✓ PLAY RECAP — Mission success. +${state.score} pts`
+    : `✗ PLAY RECAP — Wrong playbook. Server still broken.`;
+
+  const recap = document.getElementById('play-recap');
+  recap.innerHTML = lines.map(l => `<div class="recap-line ${cls}">${l}</div>`).join('') +
+    `<div class="recap-summary ${correct ? 'ok' : 'fail'}">${summary}</div>`;
+  recap.classList.add('visible');
+}
+
+function nextQuestion() {
+  state.current++;
+  if (state.current >= SCENARIOS.length) { endGame(); return; }
+  loadQuestion();
+}
+
+function endGame() {
+  showScreen('screen-result');
+
+  const allDone = state.current >= SCENARIOS.length - 1;
+  document.getElementById('result-title').textContent = allDone ? 'DATACENTER SAVED' : 'MISSION FAILED';
+  document.getElementById('result-subtitle').textContent = allDone
+    ? 'ALL SYSTEMS RESTORED — GREAT WORK, ENGINEER'
+    : 'SERVERS STILL BURNING — STUDY MORE ANSIBLE';
+  document.getElementById('result-score').textContent = state.score;
+  document.getElementById('res-correct').textContent = state.correct + '/10';
+  document.getElementById('res-streak').textContent = state.bestStreak;
+
+
+  loadLeaderboard('lb-result-inner');
+}
+
+// ══════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════
+async function loadLeaderboard(targetId) {
+  try {
+    const res = await fetch('/scores?limit=8');
+    const data = await res.json();
+    const el = document.getElementById(targetId);
+    if (!data.length) { el.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+    el.innerHTML = data.map((s, i) => `
+      <div class="lb-row">
+        <span class="lb-rank">#${i+1}</span>
+        <span class="lb-name">${s.player_name}</span>
+        <span class="lb-score">${s.score}</span>
+      </div>
+    `).join('');
+  } catch(e) {
+    const el = document.getElementById(targetId);
+    if (el) el.innerHTML = '<div class="lb-empty">Server offline</div>';
+  }
+}
+
+async function saveScore() {
+  const name = document.getElementById('player-name').value.trim() || 'ENGINEER';
+  const msg = document.getElementById('save-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const res = await fetch('/scores', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ player_name: name, score: state.score })
+    });
+    if (res.ok) {
+      msg.textContent = '✓ Score saved!';
+      loadLeaderboard('lb-result-inner');
+    } else { msg.textContent = 'Server error.'; }
+  } catch(e) { msg.textContent = 'Server offline.'; }
+}
+
+// Init leaderboard on start screen
+loadLeaderboard('lb-start-inner');
+</script>
+</body>
+</html>
