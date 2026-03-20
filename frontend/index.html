@@ -126,7 +126,7 @@ body::before{
 /* Main game area */
 .game-main{
   flex:1;display:flex;flex-direction:column;
-  padding:20px 24px;overflow-y:auto;
+  padding:20px 24px;overflow-y:auto;max-width:960px;
 }
 
 /* Top HUD */
@@ -149,7 +149,7 @@ body::before{
 .pager{
   background:var(--panel);border:1px solid var(--border);
   border-left:3px solid var(--orange);
-  padding:16px 20px;margin-bottom:20px;
+  padding:16px 20px;margin-bottom:20px;max-width:900px;
 }
 .pager-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
 .pager-from{font-size:10px;color:var(--orange);letter-spacing:1px;}
@@ -163,12 +163,12 @@ body::before{
 .concept-hint{
   background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);
   padding:10px 14px;margin-bottom:20px;
-  font-size:11px;color:var(--text2);line-height:1.8;
+  font-size:11px;color:var(--text2);line-height:1.8;max-width:900px;
 }
 .concept-hint strong{color:var(--amber2);}
 
 /* Answer cards */
-.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;max-width:900px;}
 .answer-card{
   background:var(--panel);border:1px solid var(--border);
   padding:14px 16px;cursor:pointer;
@@ -360,15 +360,90 @@ body::before{
 
 <script>
 // ══════════════════════════════════════════════════
-// SCENARIOS — 10 questions, generic Ansible concepts
+// SCENARIOS — 20 questions, Ansible from basics
 // ══════════════════════════════════════════════════
 const SCENARIOS = [
+  {
+    host: 'intro-01',
+    severity: 'INFO',
+    msg: 'A colleague asks: <b>What is Ansible?</b> You need to give them the correct one-sentence description.',
+    tags: ['basics', 'definition', 'concepts'],
+    hint: '<strong>Ansible</strong> is an open-source IT automation tool made by Red Hat. It automates provisioning, configuration management, application deployment, and orchestration.',
+    answers: [
+      { cmd: 'Agentless automation tool — uses SSH, no software needed on targets', desc: 'Correct — Ansible pushes commands over SSH, no agent installed on managed nodes', correct: true },
+      { cmd: 'A monitoring tool that tracks server metrics and sends alerts', desc: 'That describes tools like Prometheus or Nagios, not Ansible', correct: false },
+      { cmd: 'A container orchestration platform like Kubernetes', desc: 'That is Kubernetes — Ansible is a configuration management tool', correct: false },
+      { cmd: 'A CI/CD pipeline tool like Jenkins or GitLab CI', desc: 'Ansible can integrate with CI/CD but it is not a pipeline tool itself', correct: false },
+    ],
+    recap_ok: ['CONCEPT: Ansible is agentless', 'CONCEPT: Communicates over SSH (Linux) or WinRM (Windows)', 'CONCEPT: Control node runs Ansible, managed nodes need only Python + SSH', 'CONCEPT: Written in Python, tasks defined in YAML'],
+    recap_fail: ['MISCONCEPTION: Ansible does NOT require an agent on target servers', 'MISCONCEPTION: Ansible is NOT a monitoring or container tool', 'STUDY: ansible.com/overview'],
+  },
+  {
+    host: 'intro-02',
+    severity: 'INFO',
+    msg: 'New team member asks: <b>What is an Ansible inventory?</b> Pick the correct answer.',
+    tags: ['basics', 'inventory', 'concepts'],
+    hint: '<strong>Inventory</strong> is a file (INI or YAML) that lists all the hosts Ansible manages. It can group hosts logically (webservers, databases) and define variables per host or group.',
+    answers: [
+      { cmd: 'A file listing all managed hosts, optionally grouped (INI or YAML format)', desc: 'Correct — inventory tells Ansible which servers exist and how to reach them', correct: true },
+      { cmd: 'A log file that records all tasks Ansible has executed', desc: 'That is the Ansible log/output, not the inventory', correct: false },
+      { cmd: 'A YAML file that defines what tasks to run on servers', desc: 'That describes a playbook, not an inventory', correct: false },
+      { cmd: 'A database storing server configuration state', desc: 'Ansible is not state-based like Terraform — inventory is just a host list', correct: false },
+    ],
+    recap_ok: ['CONCEPT: Default inventory file: /etc/ansible/hosts', 'CONCEPT: [webservers] group contains web-01, web-02', 'CONCEPT: [databases] group contains db-01, db-02', 'CONCEPT: ansible-inventory --list  shows parsed inventory as JSON'],
+    recap_fail: ['MISCONCEPTION: Inventory is NOT a log or a state database', 'MISCONCEPTION: Inventory is NOT a playbook', 'STUDY: Inventory is simply: who are my servers?'],
+  },
+  {
+    host: 'intro-03',
+    severity: 'INFO',
+    msg: 'What is an <b>Ansible Playbook</b>? Your manager wants a clear explanation.',
+    tags: ['basics', 'playbook', 'concepts'],
+    hint: '<strong>Playbooks</strong> are YAML files that describe the desired state of your infrastructure. They contain one or more plays, each targeting a group of hosts and running a list of tasks.',
+    answers: [
+      { cmd: 'A YAML file defining plays — each play maps hosts to a list of tasks to run', desc: 'Correct — playbooks are the main way to express automation in Ansible', correct: true },
+      { cmd: 'A Python script that connects to servers and runs commands', desc: 'Ansible uses YAML playbooks, not Python scripts (though modules are Python)', correct: false },
+      { cmd: 'A list of servers Ansible should manage', desc: 'That is the inventory, not a playbook', correct: false },
+      { cmd: 'A GUI dashboard for managing Ansible jobs', desc: 'That describes Ansible AWX/Tower, not a playbook', correct: false },
+    ],
+    recap_ok: ['CONCEPT: Playbook structure:', '  - name: Configure web servers', '    hosts: webservers', '    tasks:', '      - name: Install nginx', '        apt: name=nginx state=present', 'CONCEPT: Run with: ansible-playbook site.yml'],
+    recap_fail: ['MISCONCEPTION: Playbooks are YAML, not Python scripts', 'MISCONCEPTION: Playbooks are NOT inventory files', 'STUDY: Playbooks = what to do. Inventory = where to do it.'],
+  },
+  {
+    host: 'intro-04',
+    severity: 'INFO',
+    msg: 'What does <b>idempotency</b> mean in Ansible? This is a key concept in interviews.',
+    tags: ['basics', 'idempotency', 'concepts'],
+    hint: '<strong>Idempotency</strong> means running the same playbook multiple times produces the same result — no unexpected changes on subsequent runs. If nginx is already installed, Ansible reports ok, not changed.',
+    answers: [
+      { cmd: 'Running a playbook multiple times is safe — same result every time', desc: 'Correct — idempotent tasks only make changes when the system is not in the desired state', correct: true },
+      { cmd: 'Each playbook run is faster than the previous one due to caching', desc: 'Performance optimization is not what idempotency means', correct: false },
+      { cmd: 'Ansible encrypts all data in transit between control and managed nodes', desc: 'That is SSH encryption — not related to idempotency', correct: false },
+      { cmd: 'Tasks run in parallel across all hosts simultaneously', desc: 'That is Ansible parallelism (forks) — not idempotency', correct: false },
+    ],
+    recap_ok: ['CONCEPT: First run — nginx not installed => CHANGED', 'CONCEPT: Second run — nginx already installed => OK (no action)', 'CONCEPT: Idempotency = safe to re-run anytime', 'CONCEPT: shell/command modules are NOT idempotent by default — use specific modules instead'],
+    recap_fail: ['MISCONCEPTION: Idempotency is NOT about speed or encryption', 'KEY INSIGHT: Always prefer apt/yum/service modules over shell commands for idempotency'],
+  },
+  {
+    host: 'intro-05',
+    severity: 'INFO',
+    msg: 'What is an <b>Ansible Role</b>? You need to explain it to a junior colleague.',
+    tags: ['basics', 'roles', 'structure'],
+    hint: '<strong>Roles</strong> are a way to organize playbooks into reusable, shareable units. A role has a standard directory structure: tasks/, handlers/, templates/, vars/, defaults/, files/.',
+    answers: [
+      { cmd: 'A reusable unit of automation with a standard folder structure', desc: 'Correct — roles package tasks, handlers, templates and vars together for reuse', correct: true },
+      { cmd: 'A user permission level that controls who can run playbooks', desc: 'Ansible roles are not about user permissions — that is RBAC in AWX/Tower', correct: false },
+      { cmd: 'A special task that only runs when another task reports changed', desc: 'That describes a handler, not a role', correct: false },
+      { cmd: 'The become: yes directive that grants sudo privileges', desc: 'That is privilege escalation, not a role', correct: false },
+    ],
+    recap_ok: ['CONCEPT: Role directory structure:', '  roles/nginx/', '    tasks/main.yml     <- what to do', '    handlers/main.yml  <- restart triggers', '    templates/         <- jinja2 config files', '    vars/main.yml      <- role variables', '    defaults/main.yml  <- default values'],
+    recap_fail: ['MISCONCEPTION: Roles are NOT about permissions', 'MISCONCEPTION: Roles are NOT handlers', 'STUDY: ansible-galaxy init myrole — creates role skeleton'],
+  },
   {
     host: 'app-server-01.prod',
     severity: 'CRITICAL',
     msg: 'Server <b>app-server-01.prod</b> is completely unconfigured. You need to run your full Ansible automation to configure it from scratch.',
-    tags: ['playbook', 'basics', 'getting-started'],
-    hint: '<strong>ansible-playbook</strong> is the main command to execute a playbook. Ansible connects to the hosts in your inventory and runs all the tasks defined in the YAML file.',
+    tags: ['playbook', 'run', 'command'],
+    hint: '<strong>ansible-playbook</strong> is the main command to execute a playbook. Point it at your YAML file and Ansible connects to the hosts in your inventory and runs all tasks.',
     answers: [
       { cmd: 'ansible-playbook site.yml', desc: 'Execute the playbook against all hosts defined in inventory', correct: true },
       { cmd: 'ansible all -m ping', desc: 'Just checks connectivity — installs and configures nothing', correct: false },
@@ -382,7 +457,7 @@ const SCENARIOS = [
     host: 'db-primary.prod',
     severity: 'HIGH',
     msg: 'You want to see exactly what your playbook would change on <b>db-primary.prod</b> before touching production. Show the changes without applying them.',
-    tags: ['check-mode', 'dry-run', 'diff', 'safety'],
+    tags: ['check-mode', 'dry-run', 'diff'],
     hint: '<strong>--check</strong> simulates the run without making changes. Combined with <strong>--diff</strong> it shows exactly what file content would change — like a git diff for your config files.',
     answers: [
       { cmd: 'ansible-playbook site.yml --check --diff', desc: 'Simulate the run and show file diffs — zero changes applied', correct: true },
@@ -390,15 +465,15 @@ const SCENARIOS = [
       { cmd: 'ansible-playbook site.yml --list-tasks', desc: 'Lists task names but does not show what would change in files', correct: false },
       { cmd: 'ansible-playbook site.yml --step', desc: 'Prompts for confirmation before each task — still applies changes', correct: false },
     ],
-    recap_ok: ['TASK [app : Deploy config.j2] *** changed (check mode)', '--- /etc/app/config.conf  (before)', '+++ /etc/app/config.conf  (after)', '-db_host=old-db', '+db_host=db-primary.prod', 'PLAY RECAP *** db-primary : ok=8 changed=3 failed=0 (check mode — nothing applied)'],
-    recap_fail: ['TASK [app : Deploy config.j2] *** changed', 'TASK [app : Restart service] *** changed', 'WARNING: Changes were applied to production! --check was not used.'],
+    recap_ok: ['TASK [app : Deploy config.j2] *** changed (check mode)', '--- /etc/app/config.conf  (before)', '+++ /etc/app/config.conf  (after)', '-db_host=old-db', '+db_host=db-primary.prod', 'PLAY RECAP *** db-primary : ok=8 changed=3 failed=0 (check mode)'],
+    recap_fail: ['TASK [app : Deploy config.j2] *** changed', 'TASK [app : Restart service] *** changed', 'WARNING: Changes were applied to production!'],
   },
   {
     host: 'web-03.prod',
     severity: 'HIGH',
     msg: 'Only <b>web-03.prod</b> has a broken nginx config. The other 5 web servers are fine. You need to re-run the playbook against this one host only.',
     tags: ['limit', 'targeted', 'single-host'],
-    hint: '<strong>--limit</strong> restricts playbook execution to a subset of hosts from your inventory. Accepts hostnames, group names, patterns, or comma-separated lists.',
+    hint: '<strong>--limit</strong> restricts playbook execution to a subset of hosts. Accepts hostnames, group names, patterns (web-0*) or comma-separated lists (web-01,web-03).',
     answers: [
       { cmd: 'ansible-playbook site.yml --limit web-03.prod', desc: 'Run the playbook against this one host only', correct: true },
       { cmd: 'ansible-playbook site.yml', desc: 'Runs against all hosts in inventory — unnecessary and risky', correct: false },
@@ -406,48 +481,63 @@ const SCENARIOS = [
       { cmd: 'ansible-playbook site.yml --tags nginx', desc: 'Runs nginx-tagged tasks on ALL web servers, not just web-03', correct: false },
     ],
     recap_ok: ['PLAY [Configure webservers] ***', 'TASK [nginx : Deploy nginx.conf] *** changed', 'TASK [nginx : Validate config] *** ok', 'RUNNING HANDLER [restart nginx] *** changed', 'PLAY RECAP *** web-03.prod : ok=5 changed=2 failed=0'],
-    recap_fail: ['PLAY RECAP *** web-01:ok=5  web-02:ok=5  web-03:ok=5  web-04:ok=5  web-05:ok=5  web-06:ok=5', 'WARNING: All 6 servers were restarted unnecessarily'],
+    recap_fail: ['PLAY RECAP *** web-01:ok=5  web-02:ok=5  web-03:ok=5  web-04:ok=5  web-05:ok=5  web-06:ok=5', 'WARNING: All 6 servers restarted unnecessarily'],
   },
   {
     host: 'all-webservers',
     severity: 'MEDIUM',
-    msg: 'You need to quickly check if all your web servers are reachable and responding to Ansible. No playbook needed — just a fast connectivity test.',
-    tags: ['ad-hoc', 'ping', 'inventory', 'module'],
-    hint: '<strong>Ad-hoc commands</strong> let you run a single module without writing a playbook. The <code>ping</code> module tests that Ansible can connect and that Python is available on the target.',
+    msg: 'You need to quickly check if all web servers are reachable and responding to Ansible. No playbook needed — just a fast connectivity test.',
+    tags: ['ad-hoc', 'ping', 'module'],
+    hint: '<strong>Ad-hoc commands</strong> run a single module without a playbook. Syntax: ansible [hosts] -m [module] -a [args]. The ping module verifies SSH + Python are working.',
     answers: [
       { cmd: 'ansible webservers -m ping', desc: 'Test Ansible connectivity to all hosts in the webservers group', correct: true },
-      { cmd: 'ping 192.168.1.10', desc: 'Regular ICMP ping — does not test Ansible connectivity or Python', correct: false },
-      { cmd: 'ansible-playbook ping.yml', desc: 'Would need a playbook file to exist — overkill for a quick check', correct: false },
-      { cmd: 'ansible webservers -m shell -a "echo ok"', desc: 'Works but shell module is heavier than ping for a simple check', correct: false },
+      { cmd: 'ping 192.168.1.10', desc: 'Regular ICMP ping — does not test Ansible or Python', correct: false },
+      { cmd: 'ansible-playbook ping.yml', desc: 'Needs a playbook file — overkill for a quick check', correct: false },
+      { cmd: 'ansible webservers -m shell -a "echo ok"', desc: 'Works but shell is heavier than ping for a connectivity check', correct: false },
     ],
     recap_ok: ['web-01 | SUCCESS => {changed: false, ping: pong}', 'web-02 | SUCCESS => {changed: false, ping: pong}', 'web-03 | SUCCESS => {changed: false, ping: pong}'],
     recap_fail: ['web-01 | UNREACHABLE! => {msg: Failed to connect via ssh}', 'web-02 | UNREACHABLE! => {msg: Connection timed out}'],
   },
   {
+    host: 'pkg-server.prod',
+    severity: 'MEDIUM',
+    msg: 'You need to install <b>htop</b> on all servers in your inventory using a single ad-hoc command. Servers run Ubuntu.',
+    tags: ['ad-hoc', 'apt', 'package', 'become'],
+    hint: '<strong>apt module</strong> manages packages on Debian/Ubuntu. Use <code>-b</code> (become) for sudo. Ad-hoc: ansible [hosts] -m apt -a "name=pkg state=present" -b',
+    answers: [
+      { cmd: 'ansible all -m apt -a "name=htop state=present" -b', desc: 'Install htop on all hosts using apt module with sudo', correct: true },
+      { cmd: 'ansible all -m shell -a "apt install htop"', desc: 'Missing sudo (-b) and not idempotent — avoid shell for package installs', correct: false },
+      { cmd: 'ansible all -m apt -a "name=htop"', desc: 'Missing state=present and -b flag — will fail without become', correct: false },
+      { cmd: 'ansible-playbook install.yml -e pkg=htop', desc: 'Correct approach for playbooks but not an ad-hoc command', correct: false },
+    ],
+    recap_ok: ['server-01 | CHANGED => {changed: true, stdout: Setting up htop}', 'server-02 | CHANGED => {changed: true, stdout: Setting up htop}', 'server-03 | OK => {changed: false}  (already installed)'],
+    recap_fail: ['server-01 | FAILED => {msg: sudo: a password is required}', 'ERROR: Missing -b flag for privilege escalation'],
+  },
+  {
     host: 'all-servers',
     severity: 'HIGH',
-    msg: 'A service restart is triggered on every single playbook run even when nothing changed. You need the restart to happen <b>only when the config file is actually modified</b>.',
+    msg: 'A service restart fires on every playbook run even when nothing changed. You need the restart to happen <b>only when the config file is actually modified</b>.',
     tags: ['handlers', 'idempotency', 'notify'],
-    hint: '<strong>Handlers</strong> are tasks that only run when explicitly notified by another task that reported changed. They run once at the end of the play — perfect for service restarts.',
+    hint: '<strong>Handlers</strong> are special tasks triggered by notify. They only run when the notifying task reports changed, and they run once at the end of the play.',
     answers: [
-      { cmd: 'notify: Restart app  # on the template task + matching handler', desc: 'Handler fires only when the template task actually changes the file', correct: true },
-      { cmd: 'service: name=myapp state=restarted  # as a regular task', desc: 'A regular task — restarts the service on every single run', correct: false },
+      { cmd: 'notify: Restart app  # on the template task + matching handler defined', desc: 'Handler fires only when template task actually changes the file', correct: true },
+      { cmd: 'service: name=myapp state=restarted  # as a regular task', desc: 'A regular task restarts the service on every single run', correct: false },
       { cmd: 'when: config_file.changed', desc: 'Not valid Ansible syntax — changed is not tracked this way', correct: false },
       { cmd: 'meta: flush_handlers', desc: 'Forces pending handlers to run now — does not prevent unnecessary restarts', correct: false },
     ],
-    recap_ok: ['TASK [app : Deploy app.conf.j2] *** changed', 'RUNNING HANDLER [Restart app] *** changed', 'PLAY RECAP *** ok=6 changed=2 failed=0', '# Second run — config unchanged:', 'TASK [app : Deploy app.conf.j2] *** ok  (no handler triggered)'],
-    recap_fail: ['TASK [Restart app] *** changed', 'TASK [Restart app] *** changed', 'TASK [Restart app] *** changed  <- runs every time regardless of changes'],
+    recap_ok: ['TASK [app : Deploy app.conf.j2] *** changed', 'RUNNING HANDLER [Restart app] *** changed', 'PLAY RECAP *** ok=6 changed=2 failed=0', '# Second run:', 'TASK [app : Deploy app.conf.j2] *** ok  (no handler triggered)'],
+    recap_fail: ['TASK [Restart app] *** changed', 'TASK [Restart app] *** changed', 'TASK [Restart app] *** changed  <- fires every run!'],
   },
   {
     host: 'app-cluster',
     severity: 'CRITICAL',
-    msg: 'A colleague pushed a playbook to the shared repo. Before anyone runs it on production, you need to validate it has no syntax errors — without connecting to any host.',
+    msg: 'A colleague pushed a playbook. Before anyone runs it on production, validate it has no syntax errors — without connecting to any host.',
     tags: ['syntax-check', 'validation', 'pre-flight'],
-    hint: '<strong>--syntax-check</strong> parses the entire playbook including all imported roles and tasks, and reports YAML/Jinja2 errors. It never connects to any host.',
+    hint: '<strong>--syntax-check</strong> parses the entire playbook including all imported roles and reports YAML/Jinja2 errors. Zero host connections made.',
     answers: [
       { cmd: 'ansible-playbook site.yml --syntax-check', desc: 'Parse and validate syntax — zero host connections made', correct: true },
       { cmd: 'ansible-playbook site.yml --check', desc: 'Dry run — still connects to hosts and runs task logic', correct: false },
-      { cmd: 'python3 -c "import yaml; yaml.safe_load(open(\'site.yml\'))"', desc: 'Only checks basic YAML, misses Ansible-specific syntax and Jinja2', correct: false },
+      { cmd: 'cat site.yml', desc: 'Shows raw YAML but does not validate Ansible-specific syntax or roles', correct: false },
       { cmd: 'ansible-lint site.yml', desc: 'Best-practice linter — useful but heavier than a syntax check', correct: false },
     ],
     recap_ok: ['playbook: site.yml', '  play #1 (all): Initial setup       TAGS: []', '  play #2 (webservers): Deploy app  TAGS: []', '  play #3 (databases): Configure DB TAGS: []', 'Syntax check passed — no errors found'],
@@ -456,27 +546,27 @@ const SCENARIOS = [
   {
     host: 'vault-server.prod',
     severity: 'HIGH',
-    msg: 'Your playbook stores a database password in plaintext in <b>group_vars/all/secrets.yml</b>. You need to encrypt this file before committing it to the Git repository.',
+    msg: 'Your playbook stores a database password in plaintext in <b>group_vars/all/secrets.yml</b>. Encrypt it before committing to Git.',
     tags: ['vault', 'encrypt', 'secrets', 'security'],
-    hint: '<strong>ansible-vault encrypt</strong> encrypts an existing file with AES-256. Ansible automatically decrypts it at runtime when you pass <code>--ask-vault-pass</code> or use a vault password file.',
+    hint: '<strong>ansible-vault encrypt</strong> encrypts an existing file with AES-256. Ansible decrypts automatically at runtime using --ask-vault-pass or a vault password file.',
     answers: [
       { cmd: 'ansible-vault encrypt group_vars/all/secrets.yml', desc: 'Encrypt the file in place with AES-256 — safe to commit to Git', correct: true },
-      { cmd: 'ansible-vault view group_vars/all/secrets.yml', desc: 'View an already-encrypted vault file — file must already be encrypted', correct: false },
-      { cmd: 'ansible-vault create group_vars/all/secrets.yml', desc: 'Create a new encrypted file — fails if the file already exists', correct: false },
+      { cmd: 'ansible-vault view group_vars/all/secrets.yml', desc: 'View an already-encrypted file — file must already be encrypted', correct: false },
+      { cmd: 'ansible-vault create group_vars/all/secrets.yml', desc: 'Create a new encrypted file — fails if file already exists', correct: false },
       { cmd: 'ansible-vault decrypt group_vars/all/secrets.yml', desc: 'Decrypts back to plaintext — the opposite of what we need!', correct: false },
     ],
     recap_ok: ['New Vault password: ****', 'Confirm New Vault password: ****', 'Encryption successful', '$ANSIBLE_VAULT;1.1;AES256', '39333161323934623061663465306265...'],
-    recap_fail: ['WARNING: group_vars/all/secrets.yml committed to Git in PLAINTEXT', 'db_password: supersecret123  <- visible in git log!'],
+    recap_fail: ['WARNING: secrets.yml committed to Git in PLAINTEXT', 'db_password: supersecret123  <- visible in git log forever!'],
   },
   {
     host: 'db-cluster',
     severity: 'CRITICAL',
-    msg: 'You have a 3-node database cluster. Ansible runs in parallel and all 3 nodes restart simultaneously breaking replication. Nodes must be updated <b>one at a time</b>.',
+    msg: 'You have a 3-node database cluster. Ansible runs in parallel and all nodes restart simultaneously breaking replication. Nodes must be updated <b>one at a time</b>.',
     tags: ['serial', 'rolling-update', 'cluster'],
-    hint: '<strong>serial: 1</strong> in the play definition tells Ansible to complete all tasks on one host before moving to the next. You can also use <code>serial: "33%"</code> for percentage-based rolling updates.',
+    hint: '<strong>serial: 1</strong> in the play definition processes hosts one-by-one. You can also use serial: 2 or serial: "33%" for batch rolling updates.',
     answers: [
-      { cmd: 'serial: 1  # in the play definition', desc: 'Process hosts sequentially — one fully completes before next starts', correct: true },
-      { cmd: 'ansible-playbook site.yml --forks 1', desc: 'Limits parallelism globally but applies to all plays, not just this one', correct: false },
+      { cmd: 'serial: 1  # in the play definition', desc: 'Process hosts sequentially — one completes before next starts', correct: true },
+      { cmd: 'ansible-playbook site.yml --forks 1', desc: 'Limits parallelism globally — applies to ALL plays not just this one', correct: false },
       { cmd: 'strategy: free  # in play definition', desc: 'Each host runs independently as fast as possible — makes it worse', correct: false },
       { cmd: 'ansible-playbook site.yml --limit db-node-01', desc: 'Only configures one node — the others are never updated', correct: false },
     ],
@@ -488,30 +578,90 @@ const SCENARIOS = [
     severity: 'MEDIUM',
     msg: 'You only want to run tasks tagged <code>deploy</code> in your playbook, skipping the initial setup tasks. How do you run only those tasks?',
     tags: ['tags', 'selective', 'deploy'],
-    hint: '<strong>--tags</strong> runs only tasks matching the given tag(s). <strong>--skip-tags</strong> does the opposite. Tasks without any tag are skipped when you use --tags.',
+    hint: '<strong>--tags</strong> runs only tasks matching the given tag(s). <strong>--skip-tags</strong> does the opposite. Untagged tasks are skipped when --tags is used.',
     answers: [
       { cmd: 'ansible-playbook site.yml --tags deploy', desc: 'Run only tasks tagged deploy — all others are skipped', correct: true },
       { cmd: 'ansible-playbook deploy.yml', desc: 'Runs a separate playbook file — you need to maintain two files', correct: false },
-      { cmd: 'ansible-playbook site.yml --skip-tags setup', desc: 'Skips setup tasks but still runs everything else — not selective enough', correct: false },
-      { cmd: 'ansible-playbook site.yml --start-at-task "Deploy app"', desc: 'Starts from a specific task name — fragile if task names change', correct: false },
+      { cmd: 'ansible-playbook site.yml --skip-tags setup', desc: 'Skips setup tasks but still runs everything else — not precise enough', correct: false },
+      { cmd: 'ansible-playbook site.yml --start-at-task "Deploy app"', desc: 'Starts from a task name — fragile if task names change', correct: false },
     ],
-    recap_ok: ['TASK [setup : Install packages] *** skipping (tagged: setup)', 'TASK [setup : Create users] *** skipping (tagged: setup)', 'TASK [app : Pull latest image] *** changed (tagged: deploy)', 'TASK [app : Restart service] *** changed (tagged: deploy)', 'PLAY RECAP *** web-fleet : ok=4 changed=2 failed=0'],
-    recap_fail: ['TASK [setup : Install packages] *** changed  <- setup ran again unnecessarily', 'TASK [setup : Create users] *** ok', 'WARNING: Full playbook ran — setup tasks wasted 3 minutes'],
+    recap_ok: ['TASK [setup : Install packages] *** skipping (not in tags)', 'TASK [setup : Create users] *** skipping (not in tags)', 'TASK [app : Pull latest image] *** changed  [deploy]', 'TASK [app : Restart service] *** changed  [deploy]', 'PLAY RECAP *** web-fleet : ok=4 changed=2 failed=0'],
+    recap_fail: ['TASK [setup : Install packages] *** changed  <- setup ran unnecessarily', 'WARNING: Full playbook ran — setup tasks wasted 3 minutes'],
+  },
+  {
+    host: 'template-server.prod',
+    severity: 'MEDIUM',
+    msg: 'You need to deploy a config file where the content is different per server (hostname, IP, environment). Which Ansible feature handles this?',
+    tags: ['templates', 'jinja2', 'variables'],
+    hint: '<strong>Jinja2 templates</strong> (.j2 files) let you use variables inside config files. The template module deploys them. Example: db_host={{ inventory_hostname }} in the template.',
+    answers: [
+      { cmd: 'template: src=app.conf.j2 dest=/etc/app/app.conf', desc: 'Deploy a Jinja2 template — variables are substituted per host', correct: true },
+      { cmd: 'copy: src=app.conf dest=/etc/app/app.conf', desc: 'Copies a static file — no variable substitution possible', correct: false },
+      { cmd: 'file: path=/etc/app/app.conf state=touch', desc: 'Creates an empty file — does not write any content', correct: false },
+      { cmd: 'lineinfile: path=/etc/app/app.conf line="db_host=prod"', desc: 'Adds/modifies a single line — not suitable for full config files', correct: false },
+    ],
+    recap_ok: ['TASK [app : Deploy app.conf.j2] ***', 'server-01: db_host=db-01.prod  port=5432  env=production', 'server-02: db_host=db-02.prod  port=5432  env=production', 'PLAY RECAP *** ok=4 changed=2 failed=0'],
+    recap_fail: ['TASK [app : Copy app.conf] *** ok', 'ERROR: All servers got identical config — hostname hardcoded as web-01!', 'WARNING: copy module does not support variable substitution'],
+  },
+  {
+    host: 'vars-server.prod',
+    severity: 'MEDIUM',
+    msg: 'You need to pass a variable <b>env=staging</b> to your playbook at runtime without editing any files. How do you do it?',
+    tags: ['variables', 'extra-vars', 'runtime'],
+    hint: '<strong>-e / --extra-vars</strong> passes variables at runtime and they have the highest precedence — they override everything defined in playbooks, roles, and inventory.',
+    answers: [
+      { cmd: 'ansible-playbook site.yml -e "env=staging"', desc: 'Pass variable at runtime — highest precedence, overrides everything', correct: true },
+      { cmd: 'ansible-playbook site.yml --vars "env=staging"', desc: '--vars is not a valid ansible-playbook flag', correct: false },
+      { cmd: 'ansible-playbook site.yml --limit staging', desc: '--limit filters hosts, it does not set variables', correct: false },
+      { cmd: 'export ENV=staging && ansible-playbook site.yml', desc: 'Shell env vars are not automatically available in Ansible playbooks', correct: false },
+    ],
+    recap_ok: ['PLAY [Deploy application] ***', 'TASK [app : Deploy to staging] *** changed', 'ok: env=staging (from extra vars)', 'PLAY RECAP *** ok=6 changed=3 failed=0'],
+    recap_fail: ['ERROR: --vars is not recognized', 'TASK [app : Deploy to production] *** changed  <- wrong environment!'],
+  },
+  {
+    host: 'cond-server.prod',
+    severity: 'MEDIUM',
+    msg: 'You have a task that should only run on <b>Ubuntu</b> servers, not CentOS. How do you conditionally skip it on CentOS hosts?',
+    tags: ['when', 'conditionals', 'facts'],
+    hint: '<strong>when</strong> conditionals use Ansible facts (gathered automatically) or variables. ansible_os_family returns Debian, RedHat, etc. ansible_distribution returns Ubuntu, CentOS, etc.',
+    answers: [
+      { cmd: 'when: ansible_distribution == "Ubuntu"', desc: 'Task only runs when the target is Ubuntu — skipped on all others', correct: true },
+      { cmd: 'limit: ubuntu-servers', desc: '--limit is a command-line flag, not a task attribute', correct: false },
+      { cmd: 'ignore_errors: yes', desc: 'Ignores failures but still runs on all hosts including CentOS', correct: false },
+      { cmd: 'hosts: ubuntu  # in the play', desc: 'Correct for a whole play but not for a single task within a mixed play', correct: false },
+    ],
+    recap_ok: ['TASK [app : Install apt package] ***', 'ok: [ubuntu-01] => condition is true, running', 'skipping: [centos-01] => ansible_distribution is CentOS, not Ubuntu', 'PLAY RECAP *** ubuntu-01: ok=1  centos-01: ok=0 skipped=1'],
+    recap_fail: ['TASK [app : Install apt package] *** FAILED on centos-01', 'ERROR: No package manager apt found on CentOS host'],
+  },
+  {
+    host: 'loop-server.prod',
+    severity: 'MEDIUM',
+    msg: 'You need to create 5 users (alice, bob, carol, dave, eve) on a server. You want to avoid writing 5 separate tasks. What is the cleanest solution?',
+    tags: ['loop', 'with_items', 'users'],
+    hint: '<strong>loop</strong> (or legacy with_items) iterates a task over a list. Use {{ item }} to reference the current value. One task definition, runs N times.',
+    answers: [
+      { cmd: 'loop: [alice, bob, carol, dave, eve]  # with user: name={{ item }}', desc: 'Loop runs the task once per item — clean and maintainable', correct: true },
+      { cmd: 'Write 5 separate user: tasks for each name', desc: 'Works but repetitive — violates DRY principle and hard to maintain', correct: false },
+      { cmd: 'user: name=alice,bob,carol,dave,eve', desc: 'user module does not accept comma-separated names — invalid syntax', correct: false },
+      { cmd: 'include_tasks: create_user.yml  # 5 times', desc: 'Possible but unnecessary — loop is the correct tool here', correct: false },
+    ],
+    recap_ok: ['TASK [users : Create user] *** (loop)', 'ok: [server] => item=alice  changed', 'ok: [server] => item=bob    changed', 'ok: [server] => item=carol  changed', 'ok: [server] => item=dave   changed', 'ok: [server] => item=eve    changed'],
+    recap_fail: ['ERROR: user module received invalid name: alice,bob,carol,dave,eve', 'FAILED: No such parameter for user module'],
   },
   {
     host: 'app-server-05.prod',
     severity: 'MEDIUM',
     msg: 'Before running a playbook on a new server, you want to see the full list of tasks that will execute — in order — without connecting to the host.',
     tags: ['list-tasks', 'review', 'planning'],
-    hint: '<strong>--list-tasks</strong> prints every task that would run in the correct order, without connecting to any host. Great for reviewing what a role actually does.',
+    hint: '<strong>--list-tasks</strong> prints every task in execution order, without connecting to any host. Great for reviewing what a role actually does before running it.',
     answers: [
-      { cmd: 'ansible-playbook site.yml --list-tasks', desc: 'Print all tasks in order — no host connections, no changes', correct: true },
+      { cmd: 'ansible-playbook site.yml --list-tasks', desc: 'Print all tasks in order — no host connections, no changes made', correct: true },
       { cmd: 'ansible-playbook site.yml --check', desc: 'Dry run — still connects to hosts and evaluates conditions', correct: false },
-      { cmd: 'ansible-playbook site.yml --list-hosts', desc: 'Shows which hosts would be targeted — not the task list', correct: false },
-      { cmd: 'cat roles/app/tasks/main.yml', desc: 'Shows raw YAML of one role file — not the full resolved task list', correct: false },
+      { cmd: 'ansible-playbook site.yml --list-hosts', desc: 'Shows which hosts are targeted — not the task list', correct: false },
+      { cmd: 'cat roles/app/tasks/main.yml', desc: 'Shows raw YAML of one file — not the full resolved task execution order', correct: false },
     ],
-    recap_ok: ['playbook: site.yml', '  play #1 (all): Common setup', '    tasks:', '      common : Update package cache   TAGS: [setup]', '      common : Install base packages  TAGS: [setup]', '      common : Create app user        TAGS: [setup]', '  play #2 (webservers): Deploy application', '    tasks:', '      app : Pull container image      TAGS: [deploy]', '      app : Write app config          TAGS: [deploy]', '      app : Start app service         TAGS: [deploy]'],
-    recap_fail: ['SSH: Connecting to app-server-05.prod...', 'TASK [common : Update package cache] *** changed  <- host was modified!', 'WARNING: --list-tasks was not used, tasks were executed'],
+    recap_ok: ['playbook: site.yml', '  play #1 (all): Common setup', '    tasks:', '      common : Update package cache   TAGS: [setup]', '      common : Install base packages  TAGS: [setup]', '      common : Create app user        TAGS: [setup]', '  play #2 (webservers): Deploy application', '    tasks:', '      app : Pull container image      TAGS: [deploy]', '      app : Write app config          TAGS: [deploy]'],
+    recap_fail: ['SSH: Connecting to app-server-05.prod...', 'TASK [common : Update package cache] *** changed  <- host was modified!', 'WARNING: --list-tasks was not used, tasks executed for real'],
   },
 ];
 
@@ -602,7 +752,7 @@ function loadQuestion() {
   state.answered = false;
   // HUD
   document.getElementById('hud-score').textContent = state.score;
-  document.getElementById('hud-level').textContent = (state.current + 1) + '/10';
+  document.getElementById('hud-level').textContent = (state.current + 1) + '/' + SCENARIOS.length;
   document.getElementById('hud-streak').textContent = state.streak;
   document.getElementById('hud-lives').textContent = '❤'.repeat(state.lives) + '♡'.repeat(3 - state.lives);
 
