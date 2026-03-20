@@ -431,8 +431,7 @@ const SCENARIOS = [
     hint: "<strong>Handlers</strong> are tasks that only run when explicitly notified by another task that reported 'changed'. They run once at the end of the play — perfect for service restarts.",
     answers: [
       { cmd: "notify: Restart app  # on the template task, with matching handler", desc: "Handler fires only when the template task actually changes the file", correct: true },
-      { cmd: "- name: Restart app
-  service: name=myapp state=restarted", desc: "A regular task — restarts the service on every single run", correct: false },
+      { cmd: "- name: Restart app\n  service: name=myapp state=restarted", desc: "A regular task — restarts the service on every single run", correct: false },
       { cmd: "when: config_file.changed", desc: "Not valid Ansible syntax — 'changed' is not tracked this way", correct: false },
       { cmd: "meta: flush_handlers", desc: "Forces pending handlers to run now — does not prevent unnecessary restarts", correct: false },
     ],
