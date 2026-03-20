@@ -143,8 +143,6 @@ body::before{
 .hud-sep{width:1px;height:36px;background:var(--border);}
 .hud-title{font-family:var(--orb);font-size:11px;color:var(--amber);letter-spacing:3px;margin-left:auto;}
 
-/* Timer bar */
-
 /* Pager / alert */
 .pager{
   background:var(--panel);border:1px solid var(--border);
@@ -178,12 +176,13 @@ body::before{
 .answer-card.correct{border-color:var(--green2);background:rgba(22,163,74,0.1);animation:flash-green 0.4s;}
 .answer-card.wrong{border-color:var(--red);background:rgba(220,38,38,0.1);animation:flash-red 0.3s;}
 .answer-card.disabled{pointer-events:none;opacity:0.5;}
-.answer-card.reveal-correct{border-color:var(--green2);background:rgba(22,163,74,0.08);opacity:1;}
+.answer-card.reveal-correct{border-color:var(--green2) !important;background:rgba(22,163,74,0.08) !important;opacity:1 !important;}
 @keyframes flash-green{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.8);}100%{box-shadow:0 0 20px 8px rgba(34,197,94,0);}}
 @keyframes flash-red{0%{box-shadow:0 0 0 0 rgba(220,38,38,0.8);}100%{box-shadow:0 0 20px 8px rgba(220,38,38,0);}}
 .answer-letter{font-family:var(--orb);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:2px;}
 .answer-card.correct .answer-letter{color:var(--green2);}
 .answer-card.wrong .answer-letter{color:var(--red);}
+.answer-card.reveal-correct .answer-letter{color:var(--green2);}
 .answer-cmd{font-size:11px;color:var(--blue2);margin-bottom:6px;word-break:break-all;}
 .answer-desc{font-size:10px;color:var(--text2);line-height:1.6;}
 
@@ -194,6 +193,7 @@ body::before{
   padding:16px 20px;margin-bottom:20px;
   font-size:11px;line-height:2;
   font-family:var(--mono);
+  max-width:900px;
 }
 .play-recap.visible{display:block;}
 .recap-line{display:flex;gap:12px;}
@@ -209,6 +209,7 @@ body::before{
   background:transparent;color:var(--amber);
   border:1px solid var(--amber);padding:10px 28px;
   cursor:pointer;transition:all 0.2s;display:none;
+  max-width:200px;
 }
 .btn-next:hover{background:rgba(245,158,11,0.1);}
 .btn-next.visible{display:inline-block;}
@@ -284,8 +285,9 @@ body::before{
     </div>
   </div>
 
-  <!-- Main area -->
+  <!-- Main area — FIX: was missing proper container, extra stray </div> removed -->
   <div class="game-main">
+
     <div class="hud">
       <div class="hud-item">
         <div class="hud-label">SCORE</div>
@@ -294,7 +296,7 @@ body::before{
       <div class="hud-sep"></div>
       <div class="hud-item">
         <div class="hud-label">LEVEL</div>
-        <div class="hud-val" id="hud-level">1/10</div>
+        <div class="hud-val" id="hud-level">1/20</div>
       </div>
       <div class="hud-sep"></div>
       <div class="hud-item">
@@ -307,8 +309,6 @@ body::before{
         <div class="hud-val red" id="hud-lives">❤❤❤</div>
       </div>
       <div class="hud-title">ANSIBLE OPS</div>
-    </div>
-
     </div>
 
     <div class="pager" id="pager">
@@ -328,8 +328,10 @@ body::before{
     <div class="play-recap" id="play-recap"></div>
 
     <button class="btn-next" id="btn-next" onclick="nextQuestion()">NEXT MISSION ▶</button>
-  </div>
-</div>
+
+  </div><!-- end game-main -->
+
+</div><!-- end screen-game -->
 
 <!-- ════ RESULT SCREEN ════ -->
 <div id="screen-result" class="screen">
@@ -339,8 +341,14 @@ body::before{
   </div>
   <div class="result-score" id="result-score">0</div>
   <div class="result-stats">
-    <div class="result-stat"><div class="result-stat-val" id="res-correct">0</div><div class="result-stat-label">CORRECT</div></div>
-    <div class="result-stat"><div class="result-stat-val" id="res-streak">0</div><div class="result-stat-label">BEST STREAK</div></div>
+    <div class="result-stat">
+      <div class="result-stat-val" id="res-correct">0</div>
+      <div class="result-stat-label">CORRECT</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-val" id="res-streak">0</div>
+      <div class="result-stat-label">BEST STREAK</div>
+    </div>
   </div>
 
   <div class="save-form">
@@ -360,7 +368,7 @@ body::before{
 
 <script>
 // ══════════════════════════════════════════════════
-// SCENARIOS — 20 questions, Ansible from basics
+// SCENARIOS — 20 questions
 // ══════════════════════════════════════════════════
 const SCENARIOS = [
   {
@@ -420,8 +428,8 @@ const SCENARIOS = [
       { cmd: 'Ansible encrypts all data in transit between control and managed nodes', desc: 'That is SSH encryption — not related to idempotency', correct: false },
       { cmd: 'Tasks run in parallel across all hosts simultaneously', desc: 'That is Ansible parallelism (forks) — not idempotency', correct: false },
     ],
-    recap_ok: ['CONCEPT: First run — nginx not installed => CHANGED', 'CONCEPT: Second run — nginx already installed => OK (no action)', 'CONCEPT: Idempotency = safe to re-run anytime', 'CONCEPT: shell/command modules are NOT idempotent by default — use specific modules instead'],
-    recap_fail: ['MISCONCEPTION: Idempotency is NOT about speed or encryption', 'KEY INSIGHT: Always prefer apt/yum/service modules over shell commands for idempotency'],
+    recap_ok: ['CONCEPT: First run — nginx not installed => CHANGED', 'CONCEPT: Second run — nginx already installed => OK (no action)', 'CONCEPT: Idempotency = safe to re-run anytime', 'CONCEPT: shell/command modules are NOT idempotent by default'],
+    recap_fail: ['MISCONCEPTION: Idempotency is NOT about speed or encryption', 'KEY INSIGHT: Always prefer apt/yum/service modules over shell for idempotency'],
   },
   {
     host: 'intro-05',
@@ -473,7 +481,7 @@ const SCENARIOS = [
     severity: 'HIGH',
     msg: 'Only <b>web-03.prod</b> has a broken nginx config. The other 5 web servers are fine. You need to re-run the playbook against this one host only.',
     tags: ['limit', 'targeted', 'single-host'],
-    hint: '<strong>--limit</strong> restricts playbook execution to a subset of hosts. Accepts hostnames, group names, patterns (web-0*) or comma-separated lists (web-01,web-03).',
+    hint: '<strong>--limit</strong> restricts playbook execution to a subset of hosts. Accepts hostnames, group names, patterns (web-0*) or comma-separated lists.',
     answers: [
       { cmd: 'ansible-playbook site.yml --limit web-03.prod', desc: 'Run the playbook against this one host only', correct: true },
       { cmd: 'ansible-playbook site.yml', desc: 'Runs against all hosts in inventory — unnecessary and risky', correct: false },
@@ -501,7 +509,7 @@ const SCENARIOS = [
   {
     host: 'pkg-server.prod',
     severity: 'MEDIUM',
-    msg: 'You need to install <b>htop</b> on all servers in your inventory using a single ad-hoc command. Servers run Ubuntu.',
+    msg: 'You need to install <b>htop</b> on all servers using a single ad-hoc command. Servers run Ubuntu.',
     tags: ['ad-hoc', 'apt', 'package', 'become'],
     hint: '<strong>apt module</strong> manages packages on Debian/Ubuntu. Use <code>-b</code> (become) for sudo. Ad-hoc: ansible [hosts] -m apt -a "name=pkg state=present" -b',
     answers: [
@@ -516,7 +524,7 @@ const SCENARIOS = [
   {
     host: 'all-servers',
     severity: 'HIGH',
-    msg: 'A service restart fires on every playbook run even when nothing changed. You need the restart to happen <b>only when the config file is actually modified</b>.',
+    msg: 'A service restart fires on every playbook run even when nothing changed. Make it restart <b>only when the config file is modified</b>.',
     tags: ['handlers', 'idempotency', 'notify'],
     hint: '<strong>Handlers</strong> are special tasks triggered by notify. They only run when the notifying task reports changed, and they run once at the end of the play.',
     answers: [
@@ -561,7 +569,7 @@ const SCENARIOS = [
   {
     host: 'db-cluster',
     severity: 'CRITICAL',
-    msg: 'You have a 3-node database cluster. Ansible runs in parallel and all nodes restart simultaneously breaking replication. Nodes must be updated <b>one at a time</b>.',
+    msg: 'You have a 3-node database cluster. All nodes restart simultaneously breaking replication. Nodes must be updated <b>one at a time</b>.',
     tags: ['serial', 'rolling-update', 'cluster'],
     hint: '<strong>serial: 1</strong> in the play definition processes hosts one-by-one. You can also use serial: 2 or serial: "33%" for batch rolling updates.',
     answers: [
@@ -576,7 +584,7 @@ const SCENARIOS = [
   {
     host: 'web-fleet',
     severity: 'MEDIUM',
-    msg: 'You only want to run tasks tagged <code>deploy</code> in your playbook, skipping the initial setup tasks. How do you run only those tasks?',
+    msg: 'You only want to run tasks tagged <code>deploy</code> in your playbook, skipping the initial setup tasks.',
     tags: ['tags', 'selective', 'deploy'],
     hint: '<strong>--tags</strong> runs only tasks matching the given tag(s). <strong>--skip-tags</strong> does the opposite. Untagged tasks are skipped when --tags is used.',
     answers: [
@@ -593,7 +601,7 @@ const SCENARIOS = [
     severity: 'MEDIUM',
     msg: 'You need to deploy a config file where the content is different per server (hostname, IP, environment). Which Ansible feature handles this?',
     tags: ['templates', 'jinja2', 'variables'],
-    hint: '<strong>Jinja2 templates</strong> (.j2 files) let you use variables inside config files. The template module deploys them. Example: db_host={{ inventory_hostname }} in the template.',
+    hint: '<strong>Jinja2 templates</strong> (.j2 files) let you use variables inside config files. The template module deploys them. Example: db_host={{ inventory_hostname }}',
     answers: [
       { cmd: 'template: src=app.conf.j2 dest=/etc/app/app.conf', desc: 'Deploy a Jinja2 template — variables are substituted per host', correct: true },
       { cmd: 'copy: src=app.conf dest=/etc/app/app.conf', desc: 'Copies a static file — no variable substitution possible', correct: false },
@@ -601,14 +609,14 @@ const SCENARIOS = [
       { cmd: 'lineinfile: path=/etc/app/app.conf line="db_host=prod"', desc: 'Adds/modifies a single line — not suitable for full config files', correct: false },
     ],
     recap_ok: ['TASK [app : Deploy app.conf.j2] ***', 'server-01: db_host=db-01.prod  port=5432  env=production', 'server-02: db_host=db-02.prod  port=5432  env=production', 'PLAY RECAP *** ok=4 changed=2 failed=0'],
-    recap_fail: ['TASK [app : Copy app.conf] *** ok', 'ERROR: All servers got identical config — hostname hardcoded as web-01!', 'WARNING: copy module does not support variable substitution'],
+    recap_fail: ['TASK [app : Copy app.conf] *** ok', 'ERROR: All servers got identical config — hostname hardcoded as web-01!'],
   },
   {
     host: 'vars-server.prod',
     severity: 'MEDIUM',
-    msg: 'You need to pass a variable <b>env=staging</b> to your playbook at runtime without editing any files. How do you do it?',
+    msg: 'You need to pass a variable <b>env=staging</b> to your playbook at runtime without editing any files.',
     tags: ['variables', 'extra-vars', 'runtime'],
-    hint: '<strong>-e / --extra-vars</strong> passes variables at runtime and they have the highest precedence — they override everything defined in playbooks, roles, and inventory.',
+    hint: '<strong>-e / --extra-vars</strong> passes variables at runtime with the highest precedence — they override everything defined in playbooks, roles, and inventory.',
     answers: [
       { cmd: 'ansible-playbook site.yml -e "env=staging"', desc: 'Pass variable at runtime — highest precedence, overrides everything', correct: true },
       { cmd: 'ansible-playbook site.yml --vars "env=staging"', desc: '--vars is not a valid ansible-playbook flag', correct: false },
@@ -623,7 +631,7 @@ const SCENARIOS = [
     severity: 'MEDIUM',
     msg: 'You have a task that should only run on <b>Ubuntu</b> servers, not CentOS. How do you conditionally skip it on CentOS hosts?',
     tags: ['when', 'conditionals', 'facts'],
-    hint: '<strong>when</strong> conditionals use Ansible facts (gathered automatically) or variables. ansible_os_family returns Debian, RedHat, etc. ansible_distribution returns Ubuntu, CentOS, etc.',
+    hint: '<strong>when</strong> conditionals use Ansible facts gathered automatically. ansible_distribution returns Ubuntu, CentOS, etc.',
     answers: [
       { cmd: 'when: ansible_distribution == "Ubuntu"', desc: 'Task only runs when the target is Ubuntu — skipped on all others', correct: true },
       { cmd: 'limit: ubuntu-servers', desc: '--limit is a command-line flag, not a task attribute', correct: false },
@@ -636,9 +644,9 @@ const SCENARIOS = [
   {
     host: 'loop-server.prod',
     severity: 'MEDIUM',
-    msg: 'You need to create 5 users (alice, bob, carol, dave, eve) on a server. You want to avoid writing 5 separate tasks. What is the cleanest solution?',
+    msg: 'You need to create 5 users (alice, bob, carol, dave, eve) on a server. Avoid writing 5 separate tasks.',
     tags: ['loop', 'with_items', 'users'],
-    hint: '<strong>loop</strong> (or legacy with_items) iterates a task over a list. Use {{ item }} to reference the current value. One task definition, runs N times.',
+    hint: '<strong>loop</strong> iterates a task over a list. Use {{ item }} to reference the current value. One task definition, runs N times.',
     answers: [
       { cmd: 'loop: [alice, bob, carol, dave, eve]  # with user: name={{ item }}', desc: 'Loop runs the task once per item — clean and maintainable', correct: true },
       { cmd: 'Write 5 separate user: tasks for each name', desc: 'Works but repetitive — violates DRY principle and hard to maintain', correct: false },
@@ -653,15 +661,15 @@ const SCENARIOS = [
     severity: 'MEDIUM',
     msg: 'Before running a playbook on a new server, you want to see the full list of tasks that will execute — in order — without connecting to the host.',
     tags: ['list-tasks', 'review', 'planning'],
-    hint: '<strong>--list-tasks</strong> prints every task in execution order, without connecting to any host. Great for reviewing what a role actually does before running it.',
+    hint: '<strong>--list-tasks</strong> prints every task in execution order, without connecting to any host.',
     answers: [
       { cmd: 'ansible-playbook site.yml --list-tasks', desc: 'Print all tasks in order — no host connections, no changes made', correct: true },
       { cmd: 'ansible-playbook site.yml --check', desc: 'Dry run — still connects to hosts and evaluates conditions', correct: false },
       { cmd: 'ansible-playbook site.yml --list-hosts', desc: 'Shows which hosts are targeted — not the task list', correct: false },
-      { cmd: 'cat roles/app/tasks/main.yml', desc: 'Shows raw YAML of one file — not the full resolved task execution order', correct: false },
+      { cmd: 'cat roles/app/tasks/main.yml', desc: 'Shows raw YAML of one file — not the full resolved execution order', correct: false },
     ],
     recap_ok: ['playbook: site.yml', '  play #1 (all): Common setup', '    tasks:', '      common : Update package cache   TAGS: [setup]', '      common : Install base packages  TAGS: [setup]', '      common : Create app user        TAGS: [setup]', '  play #2 (webservers): Deploy application', '    tasks:', '      app : Pull container image      TAGS: [deploy]', '      app : Write app config          TAGS: [deploy]'],
-    recap_fail: ['SSH: Connecting to app-server-05.prod...', 'TASK [common : Update package cache] *** changed  <- host was modified!', 'WARNING: --list-tasks was not used, tasks executed for real'],
+    recap_fail: ['SSH: Connecting to app-server-05.prod...', 'TASK [common : Update package cache] *** changed  <- host was modified!'],
   },
 ];
 
@@ -676,6 +684,7 @@ let state = {
   lives: 3,
   correct: 0,
   answered: false,
+  shuffledAnswers: [], // FIX: store shuffled answers with correct flags
   servers: [],
 };
 
@@ -686,14 +695,14 @@ const SERVERS = [
 ];
 
 function initServers() {
-  state.servers = SERVERS.map(n => ({name: n, status: 'ok'}));
+  state.servers = SERVERS.map(n => ({ name: n, status: 'ok' }));
   renderRack();
 }
 
 function renderRack() {
   const el = document.getElementById('rack-servers');
   el.innerHTML = state.servers.map(s => `
-    <div class="server-unit ${s.status}" id="srv-${s.name}">
+    <div class="server-unit ${s.status}">
       <div class="server-name">${s.name}</div>
       <div class="server-led">
         <div class="led power"></div>
@@ -710,25 +719,22 @@ function renderRack() {
 
 function damageServer() {
   const targets = state.servers.filter(s => s.status === 'ok');
-  if (targets.length === 0) return;
-  const s = targets[Math.floor(Math.random() * targets.length)];
-  s.status = 'critical';
+  if (!targets.length) return;
+  targets[Math.floor(Math.random() * targets.length)].status = 'critical';
   renderRack();
 }
 
 function warnServer() {
   const targets = state.servers.filter(s => s.status === 'ok');
-  if (targets.length === 0) return;
-  const s = targets[Math.floor(Math.random() * targets.length)];
-  s.status = 'warning';
+  if (!targets.length) return;
+  targets[Math.floor(Math.random() * targets.length)].status = 'warning';
   renderRack();
 }
 
 function fixServer() {
   const targets = state.servers.filter(s => s.status === 'critical' || s.status === 'warning');
-  if (targets.length === 0) return;
-  const s = targets[0];
-  s.status = 'fixed';
+  if (!targets.length) return;
+  targets[0].status = 'fixed';
   renderRack();
 }
 
@@ -736,7 +742,11 @@ function fixServer() {
 // GAME FLOW
 // ══════════════════════════════════════════════════
 function startGame() {
-  state = { current:0, score:0, streak:0, bestStreak:0, lives:3, correct:0, answered:false };
+  state = {
+    current: 0, score: 0, streak: 0, bestStreak: 0,
+    lives: 3, correct: 0, answered: false,
+    shuffledAnswers: [], servers: []
+  };
   initServers();
   showScreen('screen-game');
   loadQuestion();
@@ -750,51 +760,52 @@ function showScreen(id) {
 function loadQuestion() {
   const q = SCENARIOS[state.current];
   state.answered = false;
+
   // HUD
   document.getElementById('hud-score').textContent = state.score;
   document.getElementById('hud-level').textContent = (state.current + 1) + '/' + SCENARIOS.length;
   document.getElementById('hud-streak').textContent = state.streak;
   document.getElementById('hud-lives').textContent = '❤'.repeat(state.lives) + '♡'.repeat(3 - state.lives);
 
-  // Pager alert
+  // Pager
   document.getElementById('pager-host').textContent = q.host;
   document.getElementById('pager-msg').innerHTML = q.msg;
   document.getElementById('pager-tags').innerHTML = q.tags.map(t => `<span class="tag">${t}</span>`).join('');
   document.getElementById('concept-hint').innerHTML = '💡 HINT: ' + q.hint;
 
-  // Shuffle answers
-  const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
-  const letters = ['A','B','C','D'];
-  document.getElementById('answers').innerHTML = shuffled.map((a, i) => `
-    <div class="answer-card" onclick="selectAnswer(this, ${a.correct})">
+  // FIX: shuffle answers and store them in state so selectAnswer can reliably check correct flag
+  state.shuffledAnswers = [...q.answers].sort(() => Math.random() - 0.5);
+
+  const letters = ['A', 'B', 'C', 'D'];
+  document.getElementById('answers').innerHTML = state.shuffledAnswers.map((a, i) => `
+    <div class="answer-card" data-index="${i}" onclick="selectAnswer(this, ${i})">
       <div class="answer-letter">OPTION ${letters[i]}</div>
-      <div class="answer-cmd">${a.cmd.replace(/\n/g,'<br>')}</div>
+      <div class="answer-cmd">${a.cmd.replace(/\n/g, '<br>')}</div>
       <div class="answer-desc">${a.desc}</div>
     </div>
   `).join('');
 
-  // Hide recap + next
   document.getElementById('play-recap').classList.remove('visible');
   document.getElementById('btn-next').classList.remove('visible');
 
-  // Damage a server for effect
   if (state.current % 2 === 0) damageServer(); else warnServer();
-
 }
 
-
-
-function selectAnswer(el, correct) {
+// FIX: selectAnswer now uses index to look up correct flag from state.shuffledAnswers
+// No more fragile onclick.toString() hack
+function selectAnswer(el, index) {
   if (state.answered) return;
   state.answered = true;
-    // Disable all cards
+
+  const isCorrect = state.shuffledAnswers[index].correct;
+
+  // Disable all cards
   document.querySelectorAll('.answer-card').forEach(c => c.classList.add('disabled'));
 
-  if (correct) {
+  if (isCorrect) {
     el.classList.add('correct');
     const streakBonus = state.streak * 50;
-    const points = 100 + streakBonus;
-    state.score += points;
+    state.score += 100 + streakBonus;
     state.correct++;
     state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
@@ -804,18 +815,25 @@ function selectAnswer(el, correct) {
     state.streak = 0;
     state.lives--;
     damageServer();
-    // Reveal correct
-    document.querySelectorAll('.answer-card').forEach(c => {
-      if (c.onclick.toString().includes('true')) c.classList.add('reveal-correct');
+    // FIX: reveal correct answer by iterating shuffledAnswers properly
+    document.querySelectorAll('.answer-card').forEach((c, i) => {
+      if (state.shuffledAnswers[i] && state.shuffledAnswers[i].correct) {
+        c.classList.add('reveal-correct');
+      }
     });
   }
 
   document.getElementById('hud-score').textContent = state.score;
   document.getElementById('hud-streak').textContent = state.streak;
-  document.getElementById('hud-lives').textContent = '❤'.repeat(Math.max(0,state.lives)) + '♡'.repeat(Math.max(0, 3 - state.lives));
+  document.getElementById('hud-lives').textContent =
+    '❤'.repeat(Math.max(0, state.lives)) + '♡'.repeat(Math.max(0, 3 - state.lives));
 
-  showRecap(correct);
-  if (state.lives <= 0) { setTimeout(endGame, 2500); return; }
+  showRecap(isCorrect);
+
+  if (state.lives <= 0) {
+    setTimeout(endGame, 2500);
+    return;
+  }
   document.getElementById('btn-next').classList.add('visible');
 }
 
@@ -824,7 +842,7 @@ function showRecap(correct) {
   const lines = correct ? q.recap_ok : q.recap_fail;
   const cls = correct ? 'recap-ok' : 'recap-fail';
   const summary = correct
-    ? `✓ PLAY RECAP — Mission success. +${state.score} pts`
+    ? `✓ PLAY RECAP — Mission success. Score: ${state.score} pts`
     : `✗ PLAY RECAP — Wrong playbook. Server still broken.`;
 
   const recap = document.getElementById('play-recap');
@@ -835,7 +853,10 @@ function showRecap(correct) {
 
 function nextQuestion() {
   state.current++;
-  if (state.current >= SCENARIOS.length) { endGame(); return; }
+  if (state.current >= SCENARIOS.length) {
+    endGame();
+    return;
+  }
   loadQuestion();
 }
 
@@ -848,9 +869,9 @@ function endGame() {
     ? 'ALL SYSTEMS RESTORED — GREAT WORK, ENGINEER'
     : 'SERVERS STILL BURNING — STUDY MORE ANSIBLE';
   document.getElementById('result-score').textContent = state.score;
-  document.getElementById('res-correct').textContent = state.correct + '/10';
+  // FIX: show correct/total dynamically using SCENARIOS.length
+  document.getElementById('res-correct').textContent = state.correct + '/' + SCENARIOS.length;
   document.getElementById('res-streak').textContent = state.bestStreak;
-
 
   loadLeaderboard('lb-result-inner');
 }
@@ -859,21 +880,25 @@ function endGame() {
 // API
 // ══════════════════════════════════════════════════
 async function loadLeaderboard(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
   try {
     const res = await fetch('/scores?limit=8');
+    if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    const el = document.getElementById(targetId);
-    if (!data.length) { el.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+    if (!data.length) {
+      el.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>';
+      return;
+    }
     el.innerHTML = data.map((s, i) => `
       <div class="lb-row">
-        <span class="lb-rank">#${i+1}</span>
+        <span class="lb-rank">#${i + 1}</span>
         <span class="lb-name">${s.player_name}</span>
         <span class="lb-score">${s.score}</span>
       </div>
     `).join('');
-  } catch(e) {
-    const el = document.getElementById(targetId);
-    if (el) el.innerHTML = '<div class="lb-empty">Server offline</div>';
+  } catch (e) {
+    el.innerHTML = '<div class="lb-empty">Server offline — scores unavailable</div>';
   }
 }
 
@@ -884,14 +909,18 @@ async function saveScore() {
   try {
     const res = await fetch('/scores', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ player_name: name, score: state.score })
     });
     if (res.ok) {
       msg.textContent = '✓ Score saved!';
       loadLeaderboard('lb-result-inner');
-    } else { msg.textContent = 'Server error.'; }
-  } catch(e) { msg.textContent = 'Server offline.'; }
+    } else {
+      msg.textContent = 'Server error — score not saved.';
+    }
+  } catch (e) {
+    msg.textContent = 'Server offline — score not saved.';
+  }
 }
 
 // Init leaderboard on start screen
