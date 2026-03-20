@@ -376,7 +376,7 @@ const SCENARIOS = [
       { cmd: "ansible-vault encrypt site.yml", desc: "Encrypts the playbook file — does not execute it", correct: false },
     ],
     recap_ok: ["TASK [common : Update apt cache] *** changed", "TASK [common : Install base packages] *** changed", "TASK [common : Create deploy user] *** changed", "PLAY RECAP *** app-server-01 : ok=14 changed=10 failed=0"],
-    recap_fail: ["fatal: [app-server-01]: FAILED! => {"msg": "no playbook was provided"}", "PLAY RECAP *** app-server-01 : ok=0 changed=0 failed=1"],
+    recap_fail: ["fatal: [app-server-01]: FAILED! => {msg: 'no playbook was provided'}", "PLAY RECAP *** app-server-01 : ok=0 changed=0 failed=1"],
   },
   {
     host: "db-primary.prod",
@@ -420,8 +420,8 @@ const SCENARIOS = [
       { cmd: "ansible-playbook ping.yml", desc: "Would need a playbook file to exist — overkill for a quick check", correct: false },
       { cmd: "ansible webservers -m shell -a 'echo ok'", desc: "Works but shell module is heavier than ping for a simple check", correct: false },
     ],
-    recap_ok: ["web-01 | SUCCESS => {"changed": false, "ping": "pong"}", "web-02 | SUCCESS => {"changed": false, "ping": "pong"}", "web-03 | SUCCESS => {"changed": false, "ping": "pong"}"],
-    recap_fail: ["web-01 | UNREACHABLE! => {"msg": "Failed to connect to the host via ssh"}", "web-02 | UNREACHABLE! => {"msg": "Connection timed out"}"],
+    recap_ok: ["web-01 | SUCCESS => {changed: false, ping: 'pong'}", "web-02 | SUCCESS => {changed: false, ping: 'pong'}", "web-03 | SUCCESS => {changed: false, ping: 'pong'}"],
+    recap_fail: ["web-01 | UNREACHABLE! => {msg: 'Failed to connect to the host via ssh'}", "web-02 | UNREACHABLE! => {msg: 'Connection timed out'}"],
   },
   {
     host: "all-servers",
