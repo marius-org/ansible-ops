@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: ansible-ops
-          image: mariuseu/ansible-ops:latest
+          image: mariuseu/ansible-ops:11
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
