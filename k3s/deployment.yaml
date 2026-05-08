@@ -56,21 +56,18 @@ metadata:
   name: ansible-ops-service
   namespace: ansible-ops
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: ansible-ops
   ports:
-    - port: 8000
+    - port: 80
       targetPort: 8000
-      nodePort: 32528
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ansible-ops-ingress
   namespace: ansible-ops
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
@@ -83,4 +80,4 @@ spec:
               service:
                 name: ansible-ops-service
                 port:
-                  number: 8000
+                  number: 80
